@@ -1,6 +1,7 @@
 #include "interface.h"
 
 #include <string.h>
+#include <time.h>
 
 #define HIGHLIGHT_ERROR 1
 #define HIGHLIGHT_WHITE 2
@@ -226,12 +227,12 @@ void interface_help_window_init(interface_t * this)
 	wprintw(this->help_window, " Right tab ");
 
 	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "^");
+	wprintw(this->help_window, "▲");
 	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
 	wprintw(this->help_window, " Scroll up ");
 
 	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "v");
+	wprintw(this->help_window, "▼");
 	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
 	wprintw(this->help_window, " Scroll down ");
 
@@ -434,10 +435,6 @@ void interface_main(interface_t * this)
     int maxfd;
     maxfd = 0;
 
-    struct timeval timer;
-    timer.tv_sec = 3;
-    timer.tv_usec = 0;
-
 	keypad(this->tabs_window, TRUE);
 	while(true)
 	{
@@ -451,6 +448,9 @@ void interface_main(interface_t * this)
 
 		if (this->auto_refresh)
 		{
+			struct timeval timer;
+			timer.tv_sec = 1;
+
 	        FD_ZERO(&fds);
 	        FD_SET(0, &fds); 
 	        select(maxfd+1, &fds, NULL, NULL, &timer); 
