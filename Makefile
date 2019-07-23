@@ -6,23 +6,20 @@ LDFLAGS = -lncurses
 SOURCE_DIR = src
 OBJS_DIR = build
 
-VIEWER_NAME = log_viewer
-VIEWER_SRC_DIR := $(SOURCE_DIR)/$(VIEWER_NAME)
-
-TAB_MANAGER_NAME = tab_manager
-TAB_MANAGER_SRC_DIR := $(SOURCE_DIR)/$(TAB_MANAGER_NAME)
-
-DIRS := $(TAB_MANAGER_SRC_DIR) $(VIEWER_SRC_DIR) 
+FOLDERS := log_viewer tab_manager
+DIRS := $(patsubst %, $(SOURCE_DIR)/%, $(FOLDERS))
 SRCS := $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c))
+OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(OBJS_DIR)/%.o, $(SRCS))
+OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(OBJS_DIR)/%, $(DIRS))
 
-all: $(SRCS) $(OBJS_DIR) 
-# Compile each .c file in source folder
-	$(CC) $(CFLAGS) -c $(SRCS)
-# Move objects to correct folder
-	mv *.o build
 # Link/Compile each .o and generate an executable named log_viewer
-	$(CC) $(CFLAGS) $(OBJS_DIR)/*.o $(LDFLAGS) -o log_viewer
+all: $(OBJ_DIRS) $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o log_viewer
 	@echo "\e[38;5;82mLog viewer compiled.\e[m"
+
+# Compile each .c file in source folder
+$(OBJS_DIR)/%.o: $(SOURCE_DIR)/%.c
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 # Fix incompatibility on WSL terminals
 fixterm:
@@ -34,5 +31,5 @@ clean:
 	rm -rf $(OBJS_DIR) log_viewer
 
 # Creates folders for object files
-$(OBJS_DIR):
+$(OBJ_DIRS):
 	mkdir -p $@
