@@ -17,7 +17,7 @@
 #define REGEX_MAX 63
 #define HELP_TAB_SIZE 2
 
-#define CENTER_TEXT(col_size, title) col_size/2 - strlen(title)/2
+#define CENTER_TEXT(col_size, title) (col_size - strlen(title))/2
 #define RIGHT_TEXT(col_size, title) col_size - strlen(title)-2
 
 enum positions
