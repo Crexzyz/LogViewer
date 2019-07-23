@@ -24,7 +24,6 @@ void interface_destroy(interface_t * this)
 		}
 	}
 
-
 	free(this);
 }
 
@@ -61,7 +60,14 @@ void interface_init(interface_t * this)
 WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char * title, int position)
 {
 	WINDOW * win = newwin(row_size, col_size, y_start, x_start);
-	box(win, 0, 0);
+	interface_draw_borders(win, title, position, col_size, true);
+	return win;
+}
+
+void interface_draw_borders(WINDOW * win, char * title, int position, int col_size, bool draw_box)
+{
+	if(draw_box)
+		box(win, 0, 0);
 	if(title != NULL)
 	{
 		if(position == LEFT)
@@ -75,8 +81,6 @@ WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int
 		else if(position == RIGHT)
 			mvwprintw(win, 0, RIGHT_TEXT(col_size, title), title);
 	}
-
-	return win;
 }
 
 WINDOW * interface_new_window(int row_size, int col_size, int y_start, int x_start)
@@ -215,6 +219,29 @@ bool interface_window_input(interface_t * this, WINDOW * window, char * buffer, 
 	return false;
 }
 
+void interface_resize_windows(interface_t * this)
+{
+	// Get new dimensions
+	getmaxyx(stdscr, this->y_max, this->x_max);
+
+	// Resize main window
+	interface_resize_window(this->tabs_window, "Log Viewer", CENTER, this->y_max-HELP_TAB_SIZE, this->x_max, true);
+	// Resize help window
+	mvwin(this->help_window, this->y_max-HELP_TAB_SIZE, 0);
+	interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE, this->x_max, false);
+	interface_help_window_init(this);
+	// Refresh current tab
+	tab_manager_refresh_tab(this);
+}
+
+void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
+{
+	wclear(window);
+	wresize(window, lines, columns);
+	interface_draw_borders(window, title, position, columns, draw_box);
+	wrefresh(window);
+}
+
 void interface_main(interface_t * this)
 {
 	// Ventana, fila del pad, col del pad, fila de la ventana, col de pantalla, max de filas a refrescar, max de cols a refrescar
@@ -222,6 +249,7 @@ void interface_main(interface_t * this)
     fd_set fds;
     int maxfd;
     maxfd = 0;
+    bool resized = true;
 
 	keypad(this->tabs_window, TRUE);
 	while(true)
@@ -236,27 +264,38 @@ void interface_main(interface_t * this)
 
 		if (this->auto_refresh)
 		{
-			struct timeval timer;
-			timer.tv_sec = 1;
-
-	        FD_ZERO(&fds);
-	        FD_SET(0, &fds); 
-	        select(maxfd+1, &fds, NULL, NULL, &timer); 
-	        if (FD_ISSET(0, &fds))
+	        if(!resized)
 	        {
+				struct timeval timer;
+				timer.tv_sec = 1;
+
+	       		FD_ZERO(&fds);
+	        	FD_SET(0, &fds); 
+		        select(maxfd+1, &fds, NULL, NULL, &timer); 
+		        if (FD_ISSET(0, &fds))
+		        {
+		        }
+		        else
+		        {
+		        	if(this->tab_amount > 0)
+		        		tab_manager_refresh_tab(this);
+		        	continue;
+		        }
 	        }
 	        else
-	        {
-	        	if(this->tab_amount > 0)
-	        		tab_manager_refresh_tab(this);
-	        	continue;
-	        }
+	        	resized = true;
 		}
 
 		unsigned int input = wgetch(this->tabs_window);
 		mvwprintw(this->help_window, 0, this->x_max-4, "%3d", input);
 
-		if(input == 15) // ctrl + o
+		if(input == KEY_RESIZE)
+		{
+			interface_resize_windows(this);
+			resized = true;
+			continue;
+		}
+		else if(input == 15) // ctrl + o
 		{
 			// abrir ventana
 			tab_manager_add_tab_popup(this);

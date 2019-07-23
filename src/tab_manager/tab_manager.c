@@ -132,6 +132,8 @@ void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char 
 
 void tab_manager_refresh_tab(interface_t * this)
 {
+	if(this->tab_amount <= 0 )
+		return;
 	delwin(this->tabs[this->active_tab]->window);
 
 	FILE * file = 0;

@@ -73,6 +73,10 @@ void interface_update_help_status(interface_t * this);
 void interface_main(interface_t * this);
 void interface_refresh_all(interface_t * this);
 
+void interface_resize_windows(interface_t * this);
+void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box);
+void interface_draw_borders(WINDOW * win, char * title, int position, int col_size, bool draw_box);
+
 bool interface_window_input(interface_t * this, WINDOW * window, char * buffer, size_t size, size_t row_pos, size_t col_pos);
 
 
