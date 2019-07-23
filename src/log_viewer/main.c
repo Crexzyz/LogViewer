@@ -1,4 +1,6 @@
-#include "interface.h"
+#include "log_viewer/interface.h"
+#include "tab_manager/tab_manager.h"
+
 #include <ncurses.h>
 #include <string.h>
 
@@ -36,7 +38,7 @@ int main(int argc, char const *argv[])
 			size = size > 15 ? 14 : size;
 			strncpy(name, argv[i], size);
 
-			interface_add_tab(interface, name, (char*)argv[i], 0);
+			tab_manager_add_tab(interface, name, (char*)argv[i], 0);
 		}
 	}
 
