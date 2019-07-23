@@ -14,7 +14,7 @@ OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(OBJS_DIR)/%, $(DIRS))
 
 # Link/Compile each .o and generate an executable named log_viewer
 all: $(OBJ_DIRS) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o log_viewer
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o log_viewerr
 	@echo "\e[38;5;82mLog viewer compiled.\e[m"
 
 # Compile each .c file in source folder
@@ -28,7 +28,7 @@ fixterm:
 # Delete all object files and the executable
 .PHONY: clean
 clean:
-	rm -rf $(OBJS_DIR) log_viewer
+	rm -rf $(OBJS_DIR) log_viewerr
 
 # Creates folders for object files
 $(OBJ_DIRS):

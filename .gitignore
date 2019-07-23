@@ -3,7 +3,7 @@ build/
 *.o
 
 # Executable
-log_viewer
+log_viewerr
 
 # Log files
 *.log
