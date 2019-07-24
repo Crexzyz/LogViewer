@@ -4,13 +4,20 @@ CFLAGS += -Wall -Wextra -Wno-sign-compare
 LDFLAGS = -lncurses
 
 SOURCE_DIR = src
-OBJS_DIR = build
+BUILD_DIR = build
 
-FOLDERS := log_viewer tab_manager
-DIRS := $(patsubst %, $(SOURCE_DIR)/%, $(FOLDERS))
+# If necessary, exclude some files or folders inside src/ folder
+EXCLUDED_DIRS := 
+EXCLUDED_DIRS := $(patsubst %, $(SOURCE_DIR)/%, $(EXCLUDED_DIRS))
+
+# Get all directories located in src/ except the ones defined in EXCLUDED_DIRS
+DIRS := $(filter-out $(EXCLUDED_DIRS), $(wildcard $(SOURCE_DIR)/*))
+# Get all .c files that are in src/*/
 SRCS := $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c))
-OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(OBJS_DIR)/%.o, $(SRCS))
-OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(OBJS_DIR)/%, $(DIRS))
+# Generate .o file names for each .c file
+OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
+# Generate build/ folders for each folder in src/
+OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(BUILD_DIR)/%, $(DIRS))
 
 # Link/Compile each .o and generate an executable named log_viewer
 all: $(OBJ_DIRS) $(OBJS)
@@ -18,7 +25,7 @@ all: $(OBJ_DIRS) $(OBJS)
 	@echo "\e[38;5;82mLog viewer compiled.\e[m"
 
 # Compile each .c file in source folder
-$(OBJS_DIR)/%.o: $(SOURCE_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 # Fix incompatibility on WSL terminals
@@ -28,7 +35,7 @@ fixterm:
 # Delete all object files and the executable
 .PHONY: clean
 clean:
-	rm -rf $(OBJS_DIR) log_viewerr
+	rm -rf $(BUILD_DIR) log_viewerr
 
 # Creates folders for object files
 $(OBJ_DIRS):
