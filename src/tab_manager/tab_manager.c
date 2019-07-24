@@ -92,8 +92,6 @@ void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char 
 	tab_t * tab = malloc( sizeof(tab_t) );
 	bzero(tab->regex, REGEX_MAX);
 
-	this->tabs_text_size += 2 + strlen(name);
-
 	tab->name[NAME_MAX] = 0;
 	tab->file[FILE_MAX] = 0;
 

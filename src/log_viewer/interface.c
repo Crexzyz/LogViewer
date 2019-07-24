@@ -31,7 +31,6 @@ void interface_init(interface_t * this)
 {
 	this->tab_amount = 0;
 	this->active_tab = 0;
-	this->tabs_text_size = 0;
 	this->color = true;
 	this->auto_refresh = true;
 
@@ -188,7 +187,7 @@ bool interface_window_input(interface_t * this, WINDOW * window, char * buffer, 
 		wmove(window, row_pos, col_pos+i);
 		int input = wgetch(window);
 
-		if(input >= 32 && input <= 126)
+		if(input >= 32 && input <= 126) // ASCII text
 		{
 			buffer[i] = input;
 			mvwprintw(window, row_pos, col_pos+i, (const char*)&input);
@@ -246,109 +245,139 @@ void interface_main(interface_t * this)
 {
 	// Ventana, fila del pad, col del pad, fila de la ventana, col de pantalla, max de filas a refrescar, max de cols a refrescar
 	int row = 0;
-    fd_set fds;
-    int maxfd;
-    maxfd = 0;
     bool resized = true;
+    int opcode = -1;
 
 	keypad(this->tabs_window, TRUE);
 	while(true)
 	{
+		// Update color and auto-refresh status
 		interface_update_help_status(this);
-		// Print window data
+
+		// Update tab data if there are any
 		if(this->tab_amount > 0)
 		{
 			row = this->tabs[this->active_tab]->last_row;
 			prefresh(this->tabs[this->active_tab]->window, row, 0, 2, 1, this->y_max-2-HELP_TAB_SIZE, this->x_max-2);
 		}
 
-		if (this->auto_refresh)
-		{
-	        if(!resized)
-	        {
-				struct timeval timer;
-				timer.tv_sec = 1;
-
-	       		FD_ZERO(&fds);
-	        	FD_SET(0, &fds); 
-		        select(maxfd+1, &fds, NULL, NULL, &timer); 
-		        if (FD_ISSET(0, &fds))
-		        {
-		        }
-		        else
-		        {
-		        	if(this->tab_amount > 0)
-		        		tab_manager_refresh_tab(this);
-		        	continue;
-		        }
-	        }
-	        else
-	        	resized = true;
-		}
+		// Auto refresh current tab
+		opcode = interface_process_auto_refresh(this, resized);
+		if(opcode == 0)
+			continue;
 
 		unsigned int input = wgetch(this->tabs_window);
 		mvwprintw(this->help_window, 0, this->x_max-4, "%3d", input);
 
-		if(input == KEY_RESIZE)
-		{
-			interface_resize_windows(this);
-			resized = true;
+		// Process options-related keybindings
+		opcode = interface_process_options(this, input, &resized);
+		if(opcode == 0)
 			continue;
-		}
-		else if(input == 15) // ctrl + o
-		{
-			// abrir ventana
-			tab_manager_add_tab_popup(this);
-			continue;
-		}
-		else if(input == 'c')
-		{
-			this->color = !this->color;
-			if(this->tab_amount > 0)
-				tab_manager_refresh_tab(this);
-			continue;
-		}
-		else if(input == 'r')
-		{
-			this->auto_refresh = !this->auto_refresh;
-			continue;
-		}
-		else if(input == 5) // ctrl + e
+		else if(opcode == 1)
 			break;
 
-		if(this->tab_amount > 0)
-		{
-			if(input == KEY_RIGHT)
-			{
-				this->active_tab = (this->active_tab+1) % this->tab_amount;
-				tab_manager_print_tabs(this);
-			}
-			else if(input == KEY_LEFT)
-			{
-				this->active_tab = this->active_tab - 1 < 0 ? this->tab_amount-1 : this->active_tab-1; 
-				tab_manager_print_tabs(this);	
-			}
-			else if(input == KEY_UP)
-			{
-				row = row-1 < 0 ? -1 : row-1;
-				this->tabs[this->active_tab]->last_row = row;
-			}
-			else if(input == 269) // F5
-			{
-				tab_manager_refresh_tab(this);
-				wrefresh(this->tabs[this->active_tab]->window);
-			}
-			else if(input == 'R') // shift R
-				tab_manager_refresh_all_tabs(this);
-			else if(input == 360) // end
-				this->tabs[this->active_tab]->last_row = this->tabs[this->active_tab]->rows - this->y_max+2+HELP_TAB_SIZE;
-			else
-			{
-				++row;
-				this->tabs[this->active_tab]->last_row = row;
-			}
-		}
+		mvwprintw(this->help_window, 0, this->x_max-4, "%3d", input);
+		// Process tab-related keybindings
+		row = interface_process_tab_options(this, input, row);
+		
 	}
 }
 
+int interface_process_auto_refresh(interface_t * this, bool resized)
+{
+	if (this->auto_refresh)
+	{
+	    if(!resized)
+	    {
+    	    fd_set fds;
+    		int maxfd = 0;
 
+    		// Set a 1 second timer
+			struct timeval timer;
+			timer.tv_sec = 1;
+			// Clean fd set
+	   		FD_ZERO(&fds);
+	   		// Add stdin to set
+	    	FD_SET(0, &fds); 
+	    	// Wait 1 second for user input
+	        select(maxfd+1, &fds, NULL, NULL, &timer); 
+	        // (Conditional not really necessary) If stdin is in set, update current tab
+	        if (!FD_ISSET(0, &fds))
+	        {
+	        	if(this->tab_amount > 0)
+	        		tab_manager_refresh_tab(this);
+	        }
+
+	        return 0;
+	    }
+	    else
+	    	resized = true;
+	}
+
+	return 1;
+}
+
+int interface_process_options(interface_t * this, int input, bool * resized)
+{
+	if(input == KEY_RESIZE)
+	{
+		interface_resize_windows(this);
+		*resized = true;
+	}
+	else if(input == 15) // ctrl + o
+	{
+		tab_manager_add_tab_popup(this);
+	}
+	else if(input == 'c')
+	{
+		this->color = !this->color;
+		if(this->tab_amount > 0)
+			tab_manager_refresh_tab(this);
+	}
+	else if(input == 'r')
+	{
+		this->auto_refresh = !this->auto_refresh;
+	}
+	else if(input == 5) // ctrl + e
+		return 1;
+	else
+		return 2;
+	return 0;
+}
+
+int interface_process_tab_options(interface_t * this, int input, int row)
+{
+	if(this->tab_amount > 0)
+	{
+		if(input == KEY_RIGHT)
+		{
+			this->active_tab = (this->active_tab+1) % this->tab_amount;
+			tab_manager_print_tabs(this);
+		}
+		else if(input == KEY_LEFT)
+		{
+			this->active_tab = this->active_tab - 1 < 0 ? this->tab_amount-1 : this->active_tab-1; 
+			tab_manager_print_tabs(this);	
+		}
+		else if(input == KEY_UP)
+		{
+			row = row-1 < 0 ? -1 : row-1;
+			this->tabs[this->active_tab]->last_row = row;
+		}
+		else if(input == 269) // F5
+		{
+			tab_manager_refresh_tab(this);
+			wrefresh(this->tabs[this->active_tab]->window);
+		}
+		else if(input == 'R') // shift R
+			tab_manager_refresh_all_tabs(this);
+		else if(input == 360) // end
+			this->tabs[this->active_tab]->last_row = this->tabs[this->active_tab]->rows - this->y_max+2+HELP_TAB_SIZE;
+		else
+		{
+			++row;
+			this->tabs[this->active_tab]->last_row = row;
+		}
+	}
+	return row;
+}

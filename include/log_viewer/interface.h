@@ -20,7 +20,7 @@
 #define CENTER_TEXT(col_size, title) (col_size - strlen(title))/2
 #define RIGHT_TEXT(col_size, title) col_size - strlen(title)-2
 
-enum positions
+enum text_positions
 {
 	LEFT,
 	CENTER,
@@ -52,8 +52,6 @@ typedef struct interface
 	int tab_amount;
 	int active_tab;
 
-	int tabs_text_size;
-
 	int y_max;
 	int x_max;
 
@@ -71,6 +69,11 @@ void interface_help_window_init(interface_t * this);
 void interface_update_help_status(interface_t * this);
 
 void interface_main(interface_t * this);
+
+int interface_process_auto_refresh(interface_t * this, bool resized);
+int interface_process_options(interface_t * this, int input, bool * resized);
+int interface_process_tab_options(interface_t * this, int input, int row);
+
 void interface_refresh_all(interface_t * this);
 
 void interface_resize_windows(interface_t * this);
