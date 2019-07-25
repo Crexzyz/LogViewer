@@ -23,8 +23,6 @@ void interface_destroy(interface_t * this)
 			free(this->tabs[i]);
 		}
 	}
-
-	free(this);
 }
 
 void interface_init(interface_t * this)
@@ -89,9 +87,9 @@ WINDOW * interface_new_window(int row_size, int col_size, int y_start, int x_sta
 
 void interface_refresh_all(interface_t * this)
 {
-	refresh();
 	wrefresh(this->tabs_window);
 	wrefresh(this->help_window);
+	refresh();
 }
 
 void interface_help_window_init(interface_t * this)
@@ -237,8 +235,12 @@ void interface_resize_windows(interface_t * this)
 	// Refresh tabs indicator
 	tab_manager_print_tabs(this);
 
-	// Turn off cursor
-	curs_set(0);
+	// Refresh tab content
+	if(this->tab_amount > 0)
+	{
+		prefresh(this->tabs[this->active_tab]->window, this->tabs[this->active_tab]->last_row, 0, 
+			2, 1, this->y_max-2-HELP_TAB_SIZE, this->x_max-2);
+	}
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
@@ -284,7 +286,6 @@ void interface_main(interface_t * this)
 		else if(opcode == 1)
 			break;
 
-		mvwprintw(this->help_window, 0, this->x_max-4, "%3d", input);
 		// Process tab-related keybindings
 		row = interface_process_tab_options(this, input, row);
 		
@@ -350,6 +351,7 @@ int interface_process_options(interface_t * this, int input, bool * resized)
 		return 1;
 	else
 		return 2;
+
 	return 0;
 }
 

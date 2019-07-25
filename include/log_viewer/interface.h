@@ -59,6 +59,12 @@ typedef struct interface
 	bool color;
 } interface_t;
 
+/**
+ * @brief      Creates an instance of the whole interface in heap memory.
+ *
+ * @return     A pointer to the instance of the interface in heap memory.
+ * @remarks    Data allocated by this call must be freed.
+ */
 interface_t * interface_create();
 void interface_destroy(interface_t * this);
 

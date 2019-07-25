@@ -2,6 +2,7 @@
 #define TAB_MANAGER_H
 
 #include "log_viewer/interface.h"
+#include "input_window/input_window.h"
 
 #include <stdlib.h>
 #include <ncurses.h>

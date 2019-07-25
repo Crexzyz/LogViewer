@@ -45,6 +45,7 @@ int main(int argc, char const *argv[])
 	interface_main(interface);
 
 	interface_destroy(interface);
+	free(interface);
 	endwin();
 	
 	return 0;

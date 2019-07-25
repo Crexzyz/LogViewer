@@ -51,37 +51,12 @@ void tab_manager_print_tabs(interface_t * this)
 
 void tab_manager_add_tab_popup(interface_t * this)
 {
-	WINDOW * popup = interface_new_boxed_window(8, this->x_max/4, this->y_max/3, this->x_max/4+9, "Open file", CENTER);
-	mvwprintw(popup, 1, 1, "Tab name: ");
-	mvwprintw(popup, 3, 1, "File name: ");
-	mvwprintw(popup, 5, 1, "Regex: ");
-	wrefresh(popup);
+	input_window_t input;
+	input_window_init(&input, this, this->y_max, this->x_max);
+	input_window_get_input(&input);
+	tab_manager_add_tab(this, input_window_get_tab_name(&input), input_window_get_file_name(&input), input_window_get_regex(&input));
 
-	char name_buffer[15];
-	char file_name[40];
-	char regex_buffer[40];
-
-	bzero(name_buffer, 15);
-	bzero(file_name, 40);
-	bzero(regex_buffer, 40);
-
-	while(true)
-	{
-		interface_window_input(this, popup, name_buffer, 14, 1, strlen("Tab name: ")+1);
-
-		bool go_back = interface_window_input(this, popup, file_name, 39, 3, strlen("File name: ")+1 );
-
-		if(!go_back)
-			break;
-	}
-
-	interface_window_input(this, popup, regex_buffer, 39, 5, strlen("Regex: ")+1 );
-
-	tab_manager_add_tab(this, name_buffer, file_name, regex_buffer);
-
-	wclear(popup);
-	wrefresh(popup);
-	delwin(popup);	
+	input_window_destroy(&input);
 }
 
 void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char * regex)
