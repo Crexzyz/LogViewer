@@ -17,6 +17,9 @@ int tab_manager_get_lines(FILE * file)
 
 void tab_manager_print_tabs(interface_t * this)
 {
+	if(this->tab_amount <= 0)
+		return;
+	
 	int tabs_max = (this->x_max-2) / 16 + 1;
 	int tab_index = this->active_tab / tabs_max;
 	int i = tab_index * tabs_max;

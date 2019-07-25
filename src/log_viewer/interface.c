@@ -225,12 +225,20 @@ void interface_resize_windows(interface_t * this)
 
 	// Resize main window
 	interface_resize_window(this->tabs_window, "Log Viewer", CENTER, this->y_max-HELP_TAB_SIZE, this->x_max, true);
+
 	// Resize help window
 	mvwin(this->help_window, this->y_max-HELP_TAB_SIZE, 0);
 	interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE, this->x_max, false);
 	interface_help_window_init(this);
+
 	// Refresh current tab
 	tab_manager_refresh_tab(this);
+
+	// Refresh tabs indicator
+	tab_manager_print_tabs(this);
+
+	// Turn off cursor
+	curs_set(0);
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
