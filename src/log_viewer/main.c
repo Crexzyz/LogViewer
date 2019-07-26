@@ -28,19 +28,8 @@ int main(int argc, char const *argv[])
 	interface_refresh_all(interface);
 
 	if(argc > 1)
-	{
 		for (int i = 1; i < argc; ++i)
-		{
-			char name[15];
-			bzero(name, 15);
-			
-			int size = strlen(argv[i])-4;
-			size = size > 15 ? 14 : size;
-			strncpy(name, argv[i], size);
-
-			tab_manager_add_tab(interface, name, (char*)argv[i], 0);
-		}
-	}
+			tab_manager_add_tab(interface, (char*)argv[i], (char*)argv[i], 0);
 
 	interface_main(interface);
 

@@ -29,6 +29,8 @@ void interface_init(interface_t * this)
 {
 	this->tab_amount = 0;
 	this->active_tab = 0;
+	this->tab_display_start = 0;
+	this->tab_display_end = 0;
 	this->color = true;
 	this->auto_refresh = true;
 
@@ -165,55 +167,6 @@ void interface_update_help_status(interface_t * this)
 	mvwprintw(this->help_window, 1, 30, "%s", this->auto_refresh ? " enabled " : " disabled ");
 
 	wrefresh(this->help_window);
-}
-
-bool interface_window_input(interface_t * this, WINDOW * window, char * buffer, size_t size, size_t row_pos, size_t col_pos)
-{
-	curs_set(1);
-	keypad(window, TRUE);
-	int i = 0;
-	int total = 0;
-	while(total < size)
-	{
-		if(col_pos + i > this->x_max/4-2)
-		{
-			++row_pos;
-			col_pos = 1;
-			i = 0;
-		}
-
-		wmove(window, row_pos, col_pos+i);
-		int input = wgetch(window);
-
-		if(input >= 32 && input <= 126) // ASCII text
-		{
-			buffer[i] = input;
-			mvwprintw(window, row_pos, col_pos+i, (const char*)&input);
-			++total;
-		}
-		else if(input == KEY_BACKSPACE) // Backspace
-		{
-			i = i == 0 ? 1 : i;
-			buffer[i-1] = 0;
-
-			input = 32;
-			mvwprintw(window, row_pos, col_pos+i-1, (const char*)&input);
-			i = i-2 < 0 ? -1 : i-2;
-			total = total-1 < 0 ? 0 : total-1;
-		}
-		else if(input == 10 || input == 9) // Enter || tab
-		{
-			buffer[i] = 0;
-			break;
-		}
-		else if(input == 353) // shift + tab
-			return true;
-
-		++i;
-
-	}
-	curs_set(0);
-	return false;
 }
 
 void interface_resize_windows(interface_t * this)

@@ -19,34 +19,76 @@ void tab_manager_print_tabs(interface_t * this)
 {
 	if(this->tab_amount <= 0)
 		return;
-	
-	int tabs_max = (this->x_max-2) / 16 + 1;
-	int tab_index = this->active_tab / tabs_max;
-	int i = tab_index * tabs_max;
+		
+	const int printable_chars = this->x_max-2;
 
-	while(i / tabs_max == tab_index)
+	tab_manager_calc_tab_display_limits(this);
+
+	int print_index = 1;
+	for (int tab = this->tab_display_start; tab < this->tab_display_end; ++tab)
 	{
-		if(i == this->active_tab)
+		if(tab == this->active_tab)
 		{
 			wattron(this->tabs_window, COLOR_PAIR(HIGHLIGHT_CYAN));
-				mvwprintw(this->tabs_window, 1, (i%tabs_max)*15+1, " %-15s ", this->tabs[i]->name);
+				mvwprintw(this->tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
 			wattroff(this->tabs_window, COLOR_PAIR(HIGHLIGHT_CYAN));
 		}
-		else if(i < this->tab_amount)
+		else if(tab < this->tab_amount)
 		{
 			wattron(this->tabs_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-				mvwprintw(this->tabs_window, 1, (i%tabs_max)*15+1, " %-15s ", this->tabs[i]->name);
+				mvwprintw(this->tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
 			wattroff(this->tabs_window, COLOR_PAIR(HIGHLIGHT_WHITE));
 		}
-		else
-		{
-			mvwprintw(this->tabs_window, 1, (i%tabs_max)*15+1, " %-15s ", " ");	
-		}
-
-		++i;
+		print_index += strlen(this->tabs[tab]->name) + 1;
 	}
 
+	// Clean unused tab space
+	for (int i = print_index; i < printable_chars; ++i)
+		mvwprintw(this->tabs_window, 1, i, " ");
+
 	wrefresh(this->tabs_window);
+}
+
+void tab_manager_calc_tab_display_limits(interface_t * this)
+{
+	// 1: Left window border
+
+	// -2: Window borders
+	const int printable_chars = this->x_max-2;
+	// Check if active tab fits in screen
+	bool tab_displayed = false;
+	while(!tab_displayed)
+	{
+		int printed_chars = 1;
+		// Check how many tabs fit in the screen with the previous limits
+		for (int tab = this->tab_display_start; tab < this->tab_amount; ++tab)
+		{
+			int tab_size = strlen(this->tabs[tab]->name) + 1;
+			if(tab_size + printed_chars < printable_chars)
+			{
+				this->tab_display_end = tab+1;
+				printed_chars += tab_size;
+			}
+		}	
+
+		// If the active tab is not displayed within the current limits, change them and recalculate
+		if(this->active_tab < this->tab_display_start)
+		{
+			int old_start = this->tab_display_start;
+			this->tab_display_start = this->active_tab;
+			this->tab_display_end = this->tab_display_end - (old_start - this->tab_display_start);
+		} 
+		else if(this->active_tab >= this->tab_display_end)
+		{
+			int old_end = this->tab_display_end;
+			this->tab_display_end = this->active_tab+1;
+			this->tab_display_start = this->tab_display_start + (this->tab_display_end - old_end); 
+		}
+		else
+			tab_displayed = true;
+	}
+
+	mvwprintw(this->tabs_window, 0, 0, "AT:%2d, Start:%2d, End:%2d", this->active_tab, this->tab_display_start, this->tab_display_end);
 }
 
 void tab_manager_add_tab_popup(interface_t * this)
@@ -68,13 +110,13 @@ void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char 
 		return;
 
 	tab_t * tab = malloc( sizeof(tab_t) );
-	bzero(tab->regex, REGEX_MAX);
+	bzero(tab->regex, MAX_REGEX);
 
-	tab->name[NAME_MAX] = 0;
-	tab->file[FILE_MAX] = 0;
+	tab->name[MAX_TAB_NAME] = 0;
+	tab->file[MAX_FILE_NAME] = 0;
 
-	strncpy(tab->name, name, NAME_MAX);
-	strncpy(tab->file, file_name, FILE_MAX);
+	strncpy(tab->name, name, MAX_TAB_NAME);
+	strncpy(tab->file, file_name, MAX_FILE_NAME);
 
 	tab->last_row = 0;
 	tab->window = 0;
@@ -89,7 +131,7 @@ void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char 
 	else
 	{
 		tab->has_regex = true;
-		strncpy(tab->regex, regex, REGEX_MAX);
+		strncpy(tab->regex, regex, MAX_REGEX);
 	}
 
 	this->tabs[this->tab_amount] = tab;
@@ -116,8 +158,9 @@ void tab_manager_refresh_tab(interface_t * this)
 
 	if(this->tabs[this->active_tab]->has_regex)
 	{
-		char command[256];
-		bzero(command, 256);
+		// Change this size later
+		char command[600];
+		bzero(command, 600);
 		sprintf(command, "grep \'%s\' %s > .grepresult", this->tabs[this->active_tab]->regex, this->tabs[this->active_tab]->file);
 		file = popen((const char *)command, "r");
 		pclose(file);
@@ -164,10 +207,8 @@ void tab_manager_refresh_tab(interface_t * this)
 		memset(buffer, 0, this->x_max);
 	}
 
-	if (this->tabs[this->active_tab]->has_regex)
-		fclose(file);
-	else
-		pclose(file);
+	fclose(file);
+
 	wprintw(this->tabs[this->active_tab]->window, "\n");
 }
 
