@@ -87,8 +87,6 @@ void tab_manager_calc_tab_display_limits(interface_t * this)
 		else
 			tab_displayed = true;
 	}
-
-	mvwprintw(this->tabs_window, 0, 0, "AT:%2d, Start:%2d, End:%2d", this->active_tab, this->tab_display_start, this->tab_display_end);
 }
 
 void tab_manager_add_tab_popup(interface_t * this)
@@ -103,11 +101,20 @@ void tab_manager_add_tab_popup(interface_t * this)
 
 void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char * regex)
 {
+	FILE * test = 0;
 	if(this->tab_amount == OPENED_MAX)
 		return;
 
 	if(file_name[0] == 0)
 		return;
+
+	if((test = fopen(file_name, "r")) == NULL)
+		return;
+	else
+		fclose(test);
+
+	if(name[0] == 0)
+		name = "<No name>";
 
 	tab_t * tab = malloc( sizeof(tab_t) );
 	bzero(tab->regex, MAX_REGEX);

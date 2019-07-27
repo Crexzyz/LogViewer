@@ -88,49 +88,53 @@ void input_window_get_input(input_window_t * this)
 
 bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row, int cursor_col)
 {
+	// Turn on cursor
 	curs_set(1);
+	// Enable keypad on input window
 	keypad(this->window, TRUE);
-	int cursor_pos = 0;
-	int total = 0;
+	// Cursor's starting column
+	const int cursor_scol = cursor_col;
+	// Cursor's column position from start
+	int cursor_cpos = 0;
+	// Cursor's starting row
+	const int cursor_srow = cursor_row;
+	// Cursor's row position from start
+	int cursor_rpos = 0;
+	// Buffer's used size
+	int used_size = strlen(buffer);
+	// Get buffer size based on the pointer
 	int buffer_size = input_window_get_size_by_type(this, buffer, BUFFER);
+	// Buffer index
+	int buffer_index = 0;
+	// When cursor movement is not needed
+	bool move_cursor = true;
 
-	while(total < buffer_size)
+	while(true)
 	{
-		if(cursor_col + cursor_pos > this->window_cols-2)
-		{
-			++cursor_row;
-			cursor_col = 1;
-			cursor_pos = 0;
-		}
-
-		wmove(this->window, cursor_row, cursor_col+cursor_pos);
+		move_cursor = true;
+		mvwprintw(this->window, 0, 0, "%2d", used_size);
+		// Place cursor in current position
+		wmove(this->window, cursor_row+cursor_rpos, cursor_col+cursor_cpos);
 		int input = wgetch(this->window);
 
 		if(input == KEY_RESIZE)
 		{
 			input_window_resize(this);
-			--cursor_pos;
+			move_cursor = false; // Do not move cursor
 		}
-		else if(input >= 32 && input <= 126) // ASCII text
+		else if(input >= 32 && input <= 126) // ASCII text, "standard" input
 		{
-			buffer[cursor_pos] = input;
-			mvwprintw(this->window, cursor_row, cursor_col+cursor_pos, (const char*)&input);
-			++total;
-		}
-		else if(input == KEY_BACKSPACE) // Backspace
-		{
-			cursor_pos = cursor_pos == 0 ? 1 : cursor_pos;
-			buffer[cursor_pos-1] = 0;
+			if(buffer[buffer_index] == 0)
+				++used_size;
 
-			input = 32;
-			mvwprintw(this->window, cursor_row, cursor_col+cursor_pos-1, (const char*)&input);
-			cursor_pos = cursor_pos-2 < 0 ? -1 : cursor_pos-2;
-			total = total-1 < 0 ? 0 : total-1;
+			buffer[buffer_index] = input;
+			mvwprintw(this->window, cursor_row+cursor_rpos, cursor_col+cursor_cpos, (const char*)&input);
+			if(used_size < buffer_size)
+				++buffer_index;
 		}
 		else if(input == 10 || input == 9) // Enter || tab
 		{
-
-			if(buffer[cursor_pos] != 0)
+			if(buffer[buffer_index] != 0)
 			{
 				int buf_len = strlen(buffer);
 				if(buf_len < buffer_size-1)
@@ -139,26 +143,87 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 					buffer[buffer_size-1] = 0;
 			}
 			else
-				buffer[cursor_pos] = 0;
+				buffer[buffer_index] = 0;
 
 			break;
 		}
+		else if(input == KEY_BACKSPACE) // Backspace
+		{
+			if(buffer[buffer_index] != 0)
+				used_size = used_size-1 < 0 ? 0 : used_size-1;
+			buffer[buffer_index] = 0;
+			buffer_index = buffer_index > 0 ? buffer_index-1 : 0;
+
+			--cursor_cpos;
+
+			input = 32; // input = (ascii) blank space
+			if(cursor_cpos < 0 && cursor_rpos > 0)
+				mvwprintw(this->window, cursor_row+cursor_rpos-1, this->window_cols-2, (const char*)&input);
+			else
+				mvwprintw(this->window, cursor_row+cursor_rpos, cursor_col+cursor_cpos, (const char*)&input);
+
+			move_cursor = false;
+		}
 		else if(input == KEY_LEFT)
 		{
-			int new_pos = cursor_pos - 2 ; 
-			cursor_pos = new_pos < 0 ? -1 : new_pos;
+			--buffer_index;
+			--cursor_cpos;
+			move_cursor = false;
+		}
+		else if(input == 360) // End key
+		{
+			buffer_index = cursor_cpos = strlen(buffer)-1;
+		} 
+		else if(input == 262) // Home key, go to the first char
+		{
+			cursor_col = cursor_scol;
+			cursor_row = cursor_srow;
+			buffer_index = cursor_cpos = cursor_rpos = 0;
+			move_cursor = false;
+		}
+		else if(input == KEY_RIGHT)
+		{
+			++cursor_cpos;
+			if(buffer_index < buffer_size)
+				++buffer_index;
+			move_cursor = false;
 		}
 		else if(input == KEY_DOWN)
 			break;
 		else if(input == 353 || input == KEY_UP) // shift + tab
 			return true;
-		else if(input == 360) // End key
-			cursor_pos = strlen(buffer) - 1;
-		else if(input == 262) // Home key
-			cursor_pos = -1;
 
-		++cursor_pos;
-	}
+
+		if(move_cursor)
+			++cursor_cpos; // Move cursor to the left
+
+		// If cursor reaches the end of the window
+		if(cursor_col+cursor_cpos >= this->window_cols-1)
+		{
+			// Move cursor
+			cursor_cpos = (cursor_col+cursor_cpos) - (this->window_cols-1);
+			// Cursor starts now in a blank line
+			cursor_col = 1;
+			// Move cursor down
+			++cursor_rpos;
+		}
+
+		// If cursor is behind the correct position, move it one row up
+		if(cursor_cpos < 0)
+		{
+			if(cursor_rpos == 0) // Trivial case, there is no input
+				cursor_cpos = 0;
+			else // We need to move the cursor up
+			{
+				--cursor_rpos;
+
+				cursor_col = cursor_rpos == 0 ? cursor_scol : cursor_col-1;
+				cursor_cpos = this->window_cols-2 - cursor_col;
+			}
+		}
+
+	} 
+
 	curs_set(0);
 	return false;
 }
