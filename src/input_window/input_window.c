@@ -112,7 +112,6 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 	while(true)
 	{
 		move_cursor = true;
-		mvwprintw(this->window, 0, 0, "%2d", used_size);
 		// Place cursor in current position
 		wmove(this->window, cursor_row+cursor_rpos, cursor_col+cursor_cpos);
 		int input = wgetch(this->window);
@@ -149,10 +148,10 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 		}
 		else if(input == KEY_BACKSPACE) // Backspace
 		{
+			buffer_index = buffer_index > 0 ? buffer_index-1 : 0;
 			if(buffer[buffer_index] != 0)
 				used_size = used_size-1 < 0 ? 0 : used_size-1;
 			buffer[buffer_index] = 0;
-			buffer_index = buffer_index > 0 ? buffer_index-1 : 0;
 
 			--cursor_cpos;
 
@@ -166,7 +165,7 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 		}
 		else if(input == KEY_LEFT)
 		{
-			--buffer_index;
+			buffer_index = buffer_index > 0 ? buffer_index-1 : 0;
 			--cursor_cpos;
 			move_cursor = false;
 		}
