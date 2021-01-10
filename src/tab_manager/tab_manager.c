@@ -27,18 +27,17 @@ void tab_manager_print_tabs(interface_t * this)
 	int print_index = 1;
 	for (int tab = this->tab_display_start; tab < this->tab_display_end; ++tab)
 	{
+		size_t color = 0;
+
 		if(tab == this->active_tab)
-		{
-			wattron(this->tabs_window, COLOR_PAIR(HIGHLIGHT_CYAN));
-				mvwprintw(this->tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
-			wattroff(this->tabs_window, COLOR_PAIR(HIGHLIGHT_CYAN));
-		}
+			color = COLOR_PAIR(HIGHLIGHT_CYAN);
 		else if(tab < this->tab_amount)
-		{
-			wattron(this->tabs_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-				mvwprintw(this->tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
-			wattroff(this->tabs_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-		}
+			color = COLOR_PAIR(HIGHLIGHT_WHITE);
+
+		wattron(this->tabs_window, color);
+			mvwprintw(this->tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
+		wattroff(this->tabs_window, color);
+
 		print_index += strlen(this->tabs[tab]->name) + 1;
 	}
 

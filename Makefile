@@ -1,10 +1,12 @@
 CC = gcc
 CFLAGS = -Iinclude
-CFLAGS += -Wall -Wextra -Wno-sign-compare
+CFLAGS += -Wall -Wextra
 LDFLAGS = -lncurses
 
 SOURCE_DIR = src
 BUILD_DIR = build
+
+EXEC_FILE = lv
 
 # If necessary, exclude some files or folders inside src/ folder
 EXCLUDED_DIRS := 
@@ -21,7 +23,7 @@ OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(BUILD_DIR)/%, $(DIRS))
 
 # Link/Compile each .o and generate an executable named log_viewer
 all: $(OBJ_DIRS) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o log_viewerr
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(BUILD_DIR)/$(EXEC_FILE)
 	@echo "\e[38;5;82mLog viewer compiled.\e[m"
 
 # Compile each .c file in source folder
@@ -35,7 +37,7 @@ fixterm:
 # Delete all object files and the executable
 .PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR) log_viewerr
+	rm -rf $(BUILD_DIR)
 
 # Creates folders for object files
 $(OBJ_DIRS):

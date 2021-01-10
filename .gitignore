@@ -2,8 +2,8 @@
 build/
 *.o
 
-# Executable
-log_viewerr
+# VSCode
+.vscode/*
 
 # Log files
 *.log
