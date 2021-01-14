@@ -74,6 +74,7 @@ void interface_draw_borders(WINDOW * win, char * title, int position, int col_si
 {
 	if(draw_box)
 		box(win, 0, 0);
+
 	if(title != NULL)
 	{
 		if(position == LEFT)
@@ -226,8 +227,6 @@ int interface_process_auto_refresh(interface_t * this, bool resized)
 
 	        return 0;
 	    }
-	    else
-	    	resized = true;
 	}
 
 	return 1;
@@ -263,8 +262,11 @@ int interface_process_options(interface_t * this, int input, bool * resized)
 		help_window_t * hw = help_window_create(this->y_max, this->x_max, 0, 0);
 
 		help_window_show(hw);
-
+		help_window_listen_keys(hw);
 		help_window_destroy(hw);
+		
+		interface_draw_borders(this->tabs_window, "Log Viewer", CENTER, this->x_max, true);
+		wrefresh(this->tabs_window);
 	}
 	else
 		return 2;

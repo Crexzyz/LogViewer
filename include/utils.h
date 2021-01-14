@@ -10,4 +10,7 @@
 #define CENTER_TEXT(col_size, title) (col_size - strlen(title))/2
 #define RIGHT_TEXT(col_size, title) col_size - strlen(title)-2
 
+#define KEY_ESC 27
+
+
 #endif

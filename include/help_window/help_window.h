@@ -16,7 +16,7 @@ typedef struct help_window
 
 } help_window_t;
 
-#define HELP_OPTIONS_COUNT 11 
+#define HELP_OPTIONS_COUNT 12
 #define MAX_HELP_TEXT_SIZE 30
 
 help_window_t * help_window_create(size_t rows, size_t cols, size_t start_row, size_t start_col);

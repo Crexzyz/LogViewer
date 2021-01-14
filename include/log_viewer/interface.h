@@ -15,7 +15,7 @@
 /// Regular expression buffer size
 #define MAX_REGEX 256
 
-#define HELP_TAB_SIZE 2
+#define HELP_TAB_SIZE 1
 
 enum text_positions
 {
