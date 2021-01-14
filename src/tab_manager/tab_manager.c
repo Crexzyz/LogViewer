@@ -1,5 +1,5 @@
 #include "tab_manager/tab_manager.h"
-#include "log_viewer/interface.h"
+#include "utils.h"
 
 #include <string.h>
 

@@ -1,9 +1,15 @@
 #include "log_viewer/interface.h"
 #include "tab_manager/tab_manager.h"
 #include "help_window/help_window.h"
+#include "utils.h"
 
 #include <string.h>
 #include <time.h>
+
+const char INTERFACE_SYMBOLS[STATUS_SYMBOLS][STATUS_SYMBOLS_SIZE] = 
+{
+	"C\0", "R\0"
+};
 
 interface_t * interface_create()
 {
@@ -97,75 +103,22 @@ void interface_refresh_all(interface_t * this)
 
 void interface_help_window_init(interface_t * this)
 {
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "^o");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Open file ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "^e");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Exit ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "F5");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Refresh ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "R");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Refresh all ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "<-");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Left tab ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "->");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Right tab ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "▲");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Scroll up ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "▼");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Scroll down ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "End");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " End of file ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "c");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Toggle color ");
-
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, "r");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	wprintw(this->help_window, " Toggle auto refresh ");
-
 	interface_update_help_status(this);
 }
 
 void interface_update_help_status(interface_t * this)
 {
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	mvwprintw(this->help_window, 1, 0, "Color:"); 
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	mvwprintw(this->help_window, 1, 7, "%s", this->color ? " enabled " : " disabled ");
+	bool status[2] = {this->color, this->auto_refresh};
 
-	wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	mvwprintw(this->help_window, 1, 17, "Auto refresh:");
-	wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
-	mvwprintw(this->help_window, 1, 30, "%s", this->auto_refresh ? " enabled " : " disabled ");
+	for(size_t symbol = 0; symbol < STATUS_SYMBOLS; ++symbol)
+	{
+		if(status[symbol])
+			wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
+
+		mvwprintw(this->help_window, 0, symbol, INTERFACE_SYMBOLS[symbol]);
+
+		wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));	
+	}
 
 	wrefresh(this->help_window);
 }
