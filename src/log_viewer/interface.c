@@ -1,5 +1,6 @@
 #include "log_viewer/interface.h"
 #include "tab_manager/tab_manager.h"
+#include "help_window/help_window.h"
 
 #include <string.h>
 #include <time.h>
@@ -301,7 +302,17 @@ int interface_process_options(interface_t * this, int input, bool * resized)
 		this->auto_refresh = !this->auto_refresh;
 	}
 	else if(input == 5) // ctrl + e
+	{
 		return 1;
+	}
+	else if(input == 8) // ctrl + h
+	{
+		help_window_t * hw = help_window_create(this->y_max, this->x_max, 0, 0);
+
+		help_window_show(hw);
+
+		help_window_destroy(hw);
+	}
 	else
 		return 2;
 
