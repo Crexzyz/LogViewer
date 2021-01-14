@@ -6,12 +6,6 @@
 
 #define OPENED_MAX 20
 
-#define HIGHLIGHT_ERROR 1
-#define HIGHLIGHT_WHITE 2
-#define HIGHLIGHT_YEL 3
-#define HIGHLIGHT_BLACK 4
-#define HIGHLIGHT_CYAN 5
-
 /// File name buffer size
 #define MAX_FILE_NAME 256
 
@@ -21,10 +15,7 @@
 /// Regular expression buffer size
 #define MAX_REGEX 256
 
-#define HELP_TAB_SIZE 2
-
-#define CENTER_TEXT(col_size, title) (col_size - strlen(title))/2
-#define RIGHT_TEXT(col_size, title) col_size - strlen(title)-2
+#define HELP_TAB_SIZE 1
 
 enum text_positions
 {
@@ -46,7 +37,6 @@ typedef struct tab
 
 } tab_t;
 
-
 typedef struct interface
 {
 	WINDOW * tabs_window;
@@ -66,6 +56,9 @@ typedef struct interface
 	int tab_display_start;
 	int tab_display_end;
 } interface_t;
+
+#define STATUS_SYMBOLS 2
+#define STATUS_SYMBOLS_SIZE 2
 
 /**
  * @brief      Creates an instance of the whole interface in heap memory.
