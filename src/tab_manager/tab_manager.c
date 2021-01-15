@@ -144,23 +144,26 @@ void tab_manager_refresh_tab(interface_t * this)
 {
 	if(this->tab_amount <= 0 )
 		return;
-	delwin(this->tabs[this->active_tab]->window);
+
+	tab_t current_tab = this->tabs[this->active_tab];
+
+	delwin(current_tab->window);
 
 	FILE * file = 0;
 
-	if(this->tabs[this->active_tab]->has_regex)
+	if(current_tab->has_regex)
 	{
 		// Change this size later
 		char command[600];
 		bzero(command, 600);
-		sprintf(command, "grep \'%s\' %s > .grepresult", this->tabs[this->active_tab]->regex, this->tabs[this->active_tab]->file);
+		sprintf(command, "grep \'%s\' %s > .grepresult", current_tab->regex, current_tab->file);
 		file = popen((const char *)command, "r");
 		pclose(file);
 
 		file = fopen(".grepresult", "r");
 	}
 	else
-	 	file = fopen(this->tabs[this->active_tab]->file, "r");
+	 	file = fopen(current_tab->file, "r");
 
 
 	if(file == NULL)
@@ -170,9 +173,9 @@ void tab_manager_refresh_tab(interface_t * this)
 	if (lines < this->y_max-2-HELP_TAB_SIZE)
 		lines = this->y_max;
 
-	this->tabs[this->active_tab]->window = newpad(lines, this->x_max);
-	keypad(this->tabs[this->active_tab]->window, TRUE);
-	this->tabs[this->active_tab]->rows = lines;
+	current_tab->window = newpad(lines, this->x_max);
+	keypad(current_tab->window, TRUE);
+	tab_set_lines(current_tab, lines);
 
 	char buffer[this->x_max];
 	
@@ -183,25 +186,25 @@ void tab_manager_refresh_tab(interface_t * this)
 
 		if(strncmp(buffer, "INFO", 4) == 0 && this->color)
 		{
-			wattron(this->tabs[this->active_tab]->window, COLOR_PAIR(HIGHLIGHT_YEL));
-			wprintw(this->tabs[this->active_tab]->window, "%s", buffer);
-			wattroff(this->tabs[this->active_tab]->window, COLOR_PAIR(HIGHLIGHT_YEL));
+			wattron(current_tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
+			wprintw(current_tab->window, "%s", buffer);
+			wattroff(current_tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
 		}
 		else if(strncmp(buffer, "ERROR", 5) == 0 && this->color)
 		{
-			wattron(this->tabs[this->active_tab]->window, COLOR_PAIR(HIGHLIGHT_ERROR));
-			wprintw(this->tabs[this->active_tab]->window, "%s", buffer);
-			wattroff(this->tabs[this->active_tab]->window, COLOR_PAIR(HIGHLIGHT_ERROR));	
+			wattron(current_tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));
+			wprintw(current_tab->window, "%s", buffer);
+			wattroff(current_tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));	
 		}
 		else
-			wprintw(this->tabs[this->active_tab]->window, "%s", buffer);
+			wprintw(current_tab->window, "%s", buffer);
 
 		memset(buffer, 0, this->x_max);
 	}
 
 	fclose(file);
 
-	wprintw(this->tabs[this->active_tab]->window, "\n");
+	wprintw(current_tab->window, "\n");
 }
 
 void tab_manager_refresh_all_tabs(interface_t * this)
