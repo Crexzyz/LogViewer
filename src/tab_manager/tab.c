@@ -1,5 +1,7 @@
 #include "tab.h"
 
+#include <stdlib.h>
+
 tab_t * tab_create()
 {
     tab_t * tab = malloc(sizeof(tab_t));
