@@ -26,10 +26,11 @@ void interface_destroy(interface_t * this)
 	{
 		if(this->tabs[i] != 0)
 		{
-			delwin(this->tabs[i]->window);
-			free(this->tabs[i]);
+			tab_destroy(this->tabs[i]);
 		}
 	}
+
+	free(this);
 }
 
 void interface_init(interface_t * this)
