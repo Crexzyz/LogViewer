@@ -1,5 +1,6 @@
 #include "tab_manager/tab_manager.h"
 #include "utils.h"
+#include "tab.h"
 
 #include <string.h>
 
@@ -115,35 +116,20 @@ void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char 
 	if(name[0] == 0)
 		name = "<No name>";
 
-	tab_t * tab = malloc( sizeof(tab_t) );
-	bzero(tab->regex, MAX_REGEX);
-
-	tab->name[MAX_TAB_NAME] = 0;
-	tab->file[MAX_FILE_NAME] = 0;
-
-	strncpy(tab->name, name, MAX_TAB_NAME);
-	strncpy(tab->file, file_name, MAX_FILE_NAME);
-
-	tab->last_row = 0;
-	tab->window = 0;
-	tab->rows = 0;
-	
-	keypad(tab->window, TRUE);
+	tab_t * tab = tab_create();
+	tab_set_name(tab, name);
+	tab_set_file_name(tab, file_name);
 
 	if ( (regex != 0 && regex[0] == 0) || regex == 0)
-	{
 		tab->has_regex = false;
-	}
 	else
-	{
-		tab->has_regex = true;
-		strncpy(tab->regex, regex, MAX_REGEX);
-	}
+		tab_set_regex(tab, regex);
 
 	this->tabs[this->tab_amount] = tab;
 	++this->tab_amount;
 	tab_manager_print_tabs(this);
-
+	
+	// Update newly added tab and set pointer back to the current tab
 	int active_aux = this->active_tab;
 	this->active_tab = this->tab_amount-1;
 	tab_manager_refresh_tab(this);

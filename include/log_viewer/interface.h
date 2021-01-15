@@ -4,17 +4,9 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
+#include "tab.h"
+
 #define OPENED_MAX 20
-
-/// File name buffer size
-#define MAX_FILE_NAME 256
-
-/// Tab name buffer size
-#define MAX_TAB_NAME 20
-
-/// Regular expression buffer size
-#define MAX_REGEX 256
-
 #define HELP_TAB_SIZE 1
 
 enum text_positions
@@ -23,19 +15,6 @@ enum text_positions
 	CENTER,
 	RIGHT
 };
-
-typedef struct tab
-{
-	char name[MAX_TAB_NAME+1];
-	char file[MAX_FILE_NAME+1];
-	char regex[MAX_REGEX+1];
-		
-	WINDOW * window;
-	size_t last_row;
-	size_t rows;
-	bool has_regex;
-
-} tab_t;
 
 typedef struct interface
 {
