@@ -22,11 +22,10 @@ void input_window_destroy(input_window_t * this)
 	delwin(this->window);
 }
 
-void input_window_init(input_window_t * this, interface_t * interface, int rows, int cols)
+void input_window_init(input_window_t * this, int rows, int cols)
 {
 	this->rows = rows;
 	this->cols = cols;
-	this->interface = interface;
 
 	this->window_rows = CALCULATE_USAGE(rows);
 	this->window_cols = CALCULATE_USAGE(cols);
@@ -118,7 +117,8 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 
 		if(input == KEY_RESIZE)
 		{
-			input_window_resize(this);
+			// FIX RESIZING
+			input_window_resize(this, this->window_rows, this->window_cols);
 			move_cursor = false; // Do not move cursor
 		}
 		else if(input >= 32 && input <= 126) // ASCII text, "standard" input
@@ -227,14 +227,12 @@ bool input_window_read_text(input_window_t * this, char * buffer, int cursor_row
 	return false;
 }
 
-void input_window_resize(input_window_t * this)
+void input_window_resize(input_window_t * this, size_t max_rows, size_t max_cols)
 {
-	interface_resize_windows(this->interface);
-
 	wclear(this->window);
 
-	this->rows = this->interface->y_max;
-	this->cols = this->interface->x_max;
+	this->rows = max_rows;
+	this->cols = max_cols;
 
 	this->window_rows = CALCULATE_USAGE(this->rows);
 	this->window_cols = CALCULATE_USAGE(this->cols);
