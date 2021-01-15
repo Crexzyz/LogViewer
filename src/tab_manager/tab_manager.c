@@ -101,54 +101,55 @@ void tab_manager_add_tab_popup(interface_t * this)
 
 void tab_manager_add_tab(interface_t * this, char * name, char* file_name, char * regex)
 {
-	FILE * test = 0;
-	if(this->tab_amount == OPENED_MAX)
-		return;
+	// File name and existence validations
+	if(this->tab_amount == OPENED_MAX) return; // TODO: Popup
 
-	if(file_name[0] == 0)
-		return;
+	if(file_name[0] == 0) return;
 
-	if((test = fopen(file_name, "r")) == NULL)
-		return;
-	else
-		fclose(test);
-
-	if(name[0] == 0)
-		name = "<No name>";
-
+	if(name[0] == 0) name = "<No name>";
+	
 	tab_t * tab = tab_create();
 	tab_set_name(tab, name);
 	tab_set_file_name(tab, file_name);
+
+	FILE * file = tab_manager_open_file(tab);
+	
+	if(file == NULL)
+	{
+		tab_destroy(tab);
+		return;
+	}
+
+	// Count file's lines
+	int lines = tab_manager_get_lines(file) + 2;
+	fclose(file);
+
+	// Smaller size than screen
+	if (lines < this->y_max - 2 - HELP_TAB_SIZE) 
+		lines = this->y_max;
+
+	tab_set_lines(tab, lines);
 
 	if ( (regex != 0 && regex[0] == 0) || regex == 0)
 		tab->has_regex = false;
 	else
 		tab_set_regex(tab, regex);
 
+	tab_add_pad(tab, this->x_max, tab->rows);
+
 	this->tabs[this->tab_amount] = tab;
 	++this->tab_amount;
 	tab_manager_print_tabs(this);
 	
 	// Update newly added tab and set pointer back to the current tab
-	int active_aux = this->active_tab;
+	size_t active_aux = this->active_tab;
 	this->active_tab = this->tab_amount-1;
 	tab_manager_refresh_tab(this);
-
 	this->active_tab = active_aux;
-
-	wrefresh(tab->window);
 }
 
-
-void tab_manager_refresh_tab(interface_t * this)
+FILE * tab_manager_open_file(tab_t * current_tab)
 {
-	if(this->tab_amount <= 0 )
-		return;
-
-	tab_t * current_tab = this->tabs[this->active_tab];
-
-	delwin(current_tab->window);
-
 	FILE * file = 0;
 
 	if(current_tab->has_regex)
@@ -163,48 +164,32 @@ void tab_manager_refresh_tab(interface_t * this)
 		file = fopen(".grepresult", "r");
 	}
 	else
-	 	file = fopen(current_tab->file, "r");
-
-
-	if(file == NULL)
-		return;
-
-	int lines = tab_manager_get_lines(file) + 2;
-	if (lines < this->y_max-2-HELP_TAB_SIZE)
-		lines = this->y_max;
-
-	current_tab->window = newpad(lines, this->x_max);
-	keypad(current_tab->window, TRUE);
-	tab_set_lines(current_tab, lines);
-
-	char buffer[this->x_max];
-	
-	for(int line = 0; line < lines; ++line)
 	{
-	 	fgets(buffer, this->x_max, file);
-		buffer[ strlen(buffer)+1 ] = 0;
-
-		if(strncmp(buffer, "INFO", 4) == 0 && this->color)
-		{
-			wattron(current_tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
-			wprintw(current_tab->window, "%s", buffer);
-			wattroff(current_tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
-		}
-		else if(strncmp(buffer, "ERROR", 5) == 0 && this->color)
-		{
-			wattron(current_tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));
-			wprintw(current_tab->window, "%s", buffer);
-			wattroff(current_tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));	
-		}
-		else
-			wprintw(current_tab->window, "%s", buffer);
-
-		memset(buffer, 0, this->x_max);
+	 	file = fopen(current_tab->file, "r");
 	}
 
-	fclose(file);
+	if(file == NULL)
+	{
+		mvprintw(0,0, "fail");
+		refresh();
+	}
 
-	wprintw(current_tab->window, "\n");
+	return file;
+}
+
+
+void tab_manager_refresh_tab(interface_t * this)
+{
+	tab_t * current_tab = this->tabs[this->active_tab];
+
+	FILE * file = tab_manager_open_file(current_tab);
+
+	if(file)
+	{
+		tab_print(current_tab, this->color, file);
+
+		fclose(file);
+	}
 }
 
 void tab_manager_refresh_all_tabs(interface_t * this)
