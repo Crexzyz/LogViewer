@@ -145,7 +145,7 @@ void tab_manager_refresh_tab(interface_t * this)
 	if(this->tab_amount <= 0 )
 		return;
 
-	tab_t current_tab = this->tabs[this->active_tab];
+	tab_t * current_tab = this->tabs[this->active_tab];
 
 	delwin(current_tab->window);
 
