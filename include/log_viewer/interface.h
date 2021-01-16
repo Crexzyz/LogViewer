@@ -4,10 +4,9 @@
 #include <ncurses.h>
 #include <stdlib.h>
 
-#include "tab.h"
+#include "tab_manager/tab_manager.h"
 
 #define OPENED_MAX 20
-#define HELP_TAB_SIZE 1
 
 enum text_positions
 {
@@ -20,11 +19,7 @@ typedef struct interface
 {
 	WINDOW * tabs_window;
 	WINDOW * help_window;
-
-	tab_t * tabs[OPENED_MAX];
-
-	int tab_amount;
-	int active_tab;
+	tab_manager_t * tab_manager;
 
 	int y_max;
 	int x_max;
@@ -32,8 +27,6 @@ typedef struct interface
 	bool auto_refresh;
 	bool color;
 
-	int tab_display_start;
-	int tab_display_end;
 } interface_t;
 
 #define STATUS_SYMBOLS 2
@@ -52,7 +45,6 @@ void interface_destroy(interface_t * this);
 void interface_init(interface_t * this);
 WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char* name, int position);
 WINDOW * interface_new_window(int row_size, int col_size, int y_start, int x_start);
-void interface_help_window_init(interface_t * this);
 void interface_draw_borders(WINDOW * win, char * title, int position, int col_size, bool draw_box);
 
 // Main function

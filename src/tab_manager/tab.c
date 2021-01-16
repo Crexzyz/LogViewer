@@ -45,7 +45,7 @@ void tab_print(tab_t * tab, bool color, FILE * file)
     wmove(tab->window, 0, 0);
 
     char buffer[tab->cols];
-	for(int line = 0; line < tab->rows; ++line)
+	for(size_t line = 0; line < tab->rows; ++line)
 	{
 	 	fgets(buffer, tab->cols, file);
 		buffer[ strlen(buffer)+1 ] = 0;

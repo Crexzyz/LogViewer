@@ -1,8 +1,6 @@
 #ifndef INPUT_WINDOW_H
 #define INPUT_WINDOW_H
 
-#include "log_viewer/interface.h"
-
 #include <ncurses.h>
 #include <string.h>
 
@@ -91,10 +89,6 @@ typedef struct input_window
 	char * tab_name;
 	/// Buffer for the grep regular expression
 	char * regex;
-
-	/// Pointer to the interface struct. Used is resizing is needed
-	interface_t * interface;
-	
 } input_window_t;
 
 /**
@@ -118,11 +112,10 @@ void input_window_destroy(input_window_t * this);
  * It also allocates memory for each buffer the input window has.
  *
  * @param      this	      The (uninitialized) input window instance
- * @param[in]  interface  A pointer to the interface instance
  * @param[in]  rows       The rows the terminal screen has 
  * @param[in]  cols       The columns the terminal screen has
  */
-void input_window_init(input_window_t * this, interface_t * interface, int rows, int cols);
+void input_window_init(input_window_t * this, int rows, int cols);
 
 /**
  * @brief      Prints descriptive text in the blank window
@@ -168,7 +161,7 @@ int input_window_get_size_by_type(input_window_t * this, char * buffer, int type
  *
  * @param      this The input window instance
  */
-void input_window_resize(input_window_t * this);
+void input_window_resize(input_window_t * this, size_t max_rows, size_t max_cols);
 
 /**
  * @brief      Returns the tab name saved on the last input

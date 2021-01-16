@@ -29,12 +29,11 @@ int main(int argc, char const *argv[])
 
 	if(argc > 1)
 		for (int i = 1; i < argc; ++i)
-			tab_manager_add_tab(interface, (char*)argv[i], (char*)argv[i], 0);
+			tab_manager_add_tab(interface->tab_manager, interface->tabs_window, (char*)argv[i], (char*)argv[i], 0);
 
 	interface_main(interface);
 
 	interface_destroy(interface);
-	free(interface);
 	endwin();
 	
 	return 0;

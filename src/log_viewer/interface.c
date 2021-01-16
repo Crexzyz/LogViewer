@@ -1,5 +1,4 @@
 #include "log_viewer/interface.h"
-#include "tab_manager/tab_manager.h"
 #include "help_window/help_window.h"
 #include "utils.h"
 
@@ -19,32 +18,21 @@ interface_t * interface_create()
 
 void interface_destroy(interface_t * this)
 {
-	delwin(this->tabs_window);
-	delwin(this->help_window);
-
-	for (int i = 0; i < this->tab_amount; ++i)
+	if(this)
 	{
-		if(this->tabs[i] != 0)
-		{
-			delwin(this->tabs[i]->window);
-			free(this->tabs[i]);
-		}
+		delwin(this->tabs_window);
+		delwin(this->help_window);	
+		tab_manager_destroy(this->tab_manager);
+		free(this);
 	}
 }
 
 void interface_init(interface_t * this)
 {
-	this->tab_amount = 0;
-	this->active_tab = 0;
-	this->tab_display_start = 0;
-	this->tab_display_end = 0;
+	bzero(this, sizeof(interface_t));
+
 	this->color = true;
 	this->auto_refresh = true;
-
-	for (int i = 0; i < OPENED_MAX; ++i)
-	{
-		this->tabs[i] = 0;
-	}
 
 	init_color(COLOR_BLACK, 0,0,0);
 	init_pair(HIGHLIGHT_ERROR, COLOR_WHITE, COLOR_RED);
@@ -55,12 +43,12 @@ void interface_init(interface_t * this)
 
 	getmaxyx(stdscr, this->y_max, this->x_max);
 
+	this->tab_manager = tab_manager_create(this->x_max, this->y_max);
+
 	refresh();
 
 	this->tabs_window = interface_new_boxed_window(this->y_max-HELP_TAB_SIZE, this->x_max, 0, 0, "Log Viewer", CENTER);
 	this->help_window = interface_new_window(HELP_TAB_SIZE, this->x_max, this->y_max-HELP_TAB_SIZE, 0);
-
-	interface_help_window_init(this);
 }
 
 WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char * title, int position)
@@ -102,11 +90,6 @@ void interface_refresh_all(interface_t * this)
 	refresh();
 }
 
-void interface_help_window_init(interface_t * this)
-{
-	interface_update_help_status(this);
-}
-
 void interface_update_help_status(interface_t * this)
 {
 	bool status[2] = {this->color, this->auto_refresh};
@@ -135,18 +118,20 @@ void interface_resize_windows(interface_t * this)
 	// Resize help window
 	mvwin(this->help_window, this->y_max-HELP_TAB_SIZE, 0);
 	interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE, this->x_max, false);
-	interface_help_window_init(this);
 
 	// Refresh current tab
-	tab_manager_refresh_tab(this);
+	tab_manager_refresh_tab(this->tab_manager, this->color);
 
 	// Refresh tabs indicator
-	tab_manager_print_tabs(this);
+	tab_manager_print_tabs(this->tab_manager, this->tabs_window);
 
 	// Refresh tab content
-	if(this->tab_amount > 0)
+	if(this->tab_manager->tab_amount > 0)
 	{
-		prefresh(this->tabs[this->active_tab]->window, this->tabs[this->active_tab]->last_row, 0, 
+		tab_manager_t * tm = this->tab_manager;
+		tab_t * tab = tm->tabs[tm->active_tab];		
+		
+		prefresh(tab->window, tab->last_row, 0, 
 			2, 1, this->y_max-2-HELP_TAB_SIZE, this->x_max-2);
 	}
 }
@@ -173,10 +158,13 @@ void interface_main(interface_t * this)
 		interface_update_help_status(this);
 
 		// Update tab data if there are any
-		if(this->tab_amount > 0)
+		if(this->tab_manager->tab_amount > 0)
 		{
-			row = this->tabs[this->active_tab]->last_row;
-			prefresh(this->tabs[this->active_tab]->window, row, 0, 2, 1, this->y_max-2-HELP_TAB_SIZE, this->x_max-2);
+			tab_manager_t * tm = this->tab_manager;
+			tab_t * tab = tm->tabs[tm->active_tab];
+
+			row = tab->last_row;
+			prefresh(tab->window, row, 0, 2, 1, this->y_max-2-HELP_TAB_SIZE, this->x_max-2);
 		}
 
 		// Auto refresh current tab
@@ -221,8 +209,8 @@ int interface_process_auto_refresh(interface_t * this, bool resized)
 	        // (Conditional not really necessary) If stdin is in set, update current tab
 	        if (!FD_ISSET(0, &fds))
 	        {
-	        	if(this->tab_amount > 0)
-	        		tab_manager_refresh_tab(this);
+	        	if(this->tab_manager->tab_amount > 0)
+	        		tab_manager_refresh_tab(this->tab_manager, this->color);
 	        }
 
 	        return 0;
@@ -241,13 +229,13 @@ int interface_process_options(interface_t * this, int input, bool * resized)
 	}
 	else if(input == 15) // ctrl + o
 	{
-		tab_manager_add_tab_popup(this);
+		tab_manager_add_tab_popup(this->tab_manager, this->tabs_window);
 	}
 	else if(input == 'c')
 	{
 		this->color = !this->color;
-		if(this->tab_amount > 0)
-			tab_manager_refresh_tab(this);
+		if(this->tab_manager->tab_amount > 0)
+			tab_manager_refresh_tab(this->tab_manager, this->color);
 	}
 	else if(input == 'r')
 	{
@@ -276,36 +264,39 @@ int interface_process_options(interface_t * this, int input, bool * resized)
 
 int interface_process_tab_options(interface_t * this, int input, int row)
 {
-	if(this->tab_amount > 0)
+	if(this->tab_manager->tab_amount > 0)
 	{
+		tab_manager_t * tm = this->tab_manager;
+		tab_t * active_tab = tm->tabs[tm->active_tab];
+
 		if(input == KEY_RIGHT)
 		{
-			this->active_tab = (this->active_tab+1) % this->tab_amount;
-			tab_manager_print_tabs(this);
+			tm->active_tab = (tm->active_tab + 1) % tm->tab_amount;
+			tab_manager_print_tabs(this->tab_manager, this->tabs_window);
 		}
 		else if(input == KEY_LEFT)
 		{
-			this->active_tab = this->active_tab - 1 < 0 ? this->tab_amount-1 : this->active_tab-1; 
-			tab_manager_print_tabs(this);	
+			tm->active_tab = tm->active_tab == 0 ? tm->tab_amount - 1 : tm->active_tab - 1; 
+			tab_manager_print_tabs(this->tab_manager, this->tabs_window);	
 		}
 		else if(input == KEY_UP)
 		{
 			row = row-1 < 0 ? -1 : row-1;
-			this->tabs[this->active_tab]->last_row = row;
+			active_tab->last_row = row;
 		}
 		else if(input == 269) // F5
 		{
-			tab_manager_refresh_tab(this);
-			wrefresh(this->tabs[this->active_tab]->window);
+			tab_manager_refresh_tab(this->tab_manager, this->color);
+			wrefresh(active_tab->window);
 		}
 		else if(input == 'R') // shift R
-			tab_manager_refresh_all_tabs(this);
+			tab_manager_refresh_all_tabs(this->tab_manager, this->color);
 		else if(input == 360) // end
-			this->tabs[this->active_tab]->last_row = this->tabs[this->active_tab]->rows - this->y_max+2+HELP_TAB_SIZE;
+			active_tab->last_row = active_tab->rows - this->y_max+2+HELP_TAB_SIZE;
 		else
 		{
 			++row;
-			this->tabs[this->active_tab]->last_row = row;
+			active_tab->last_row = row;
 		}
 	}
 	return row;
