@@ -38,74 +38,57 @@ void tab_manager_destroy(tab_manager_t * tm)
 
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
 {
-	if(this->tab_amount <= 0)
+	if(this->tab_amount == 0)
 		return;
-		
-	const int printable_chars = this->max_cols - 2;
 
-	tab_manager_calc_tab_display_limits(this);
+	// Check limits
+	tab_manager_update_limits(this);
+	
+	const size_t printable_chars = this->max_cols - 2;
+	size_t print_index = 1;
+	size_t tab = 0;
 
-	int print_index = 1;
-	for (size_t tab = this->tab_display_start; tab < this->tab_display_end; ++tab)
+	// Actual printing
+	for(tab = this->tab_display_start; tab < this->tab_amount; ++tab)
 	{
-		size_t color = 0;
+		size_t color = this->active_tab == tab ? COLOR_PAIR(HIGHLIGHT_CYAN) : COLOR_PAIR(HIGHLIGHT_WHITE);
+		size_t tab_name_size = strnlen(this->tabs[tab]->name, TAB_MAX_TAB_NAME);
 
-		if(tab == this->active_tab)
-			color = COLOR_PAIR(HIGHLIGHT_CYAN);
-		else if(tab < this->tab_amount)
-			color = COLOR_PAIR(HIGHLIGHT_WHITE);
-
-		wattron(tabs_window, color);
-			mvwprintw(tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
-		wattroff(tabs_window, color);
-
-		print_index += strlen(this->tabs[tab]->name) + 1;
-	}
-
-	// Clean unused tab space
-	for (int i = print_index; i < printable_chars; ++i)
-		mvwprintw(tabs_window, 1, i, " ");
-
-	wrefresh(tabs_window);
-}
-
-void tab_manager_calc_tab_display_limits(tab_manager_t * this)
-{
-	// 1: Left window border
-
-	// -2: Window borders
-	const int printable_chars = this->max_cols-2;
-	// Check if active tab fits in screen
-	bool tab_displayed = false;
-	while(!tab_displayed)
-	{
-		int printed_chars = 1;
-		// Check how many tabs fit in the screen with the previous limits
-		for (size_t tab = this->tab_display_start; tab < this->tab_amount; ++tab)
+		if(print_index + tab_name_size <= printable_chars )
 		{
-			int tab_size = strlen(this->tabs[tab]->name) + 1;
-			if(tab_size + printed_chars < printable_chars)
-			{
-				this->tab_display_end = tab+1;
-				printed_chars += tab_size;
-			}
-		}	
-
-		// If the active tab is not displayed within the current limits, change them and recalculate
-		if(this->active_tab < this->tab_display_start)
-		{
-			int old_start = this->tab_display_start;
-			this->tab_display_start = this->active_tab;
-			this->tab_display_end = this->tab_display_end - (old_start - this->tab_display_start);
-		} 
-		else if(this->active_tab >= this->tab_display_end)
-		{
-			int old_end = this->tab_display_end;
-			this->tab_display_end = this->active_tab+1;
-			this->tab_display_start = this->tab_display_start + (this->tab_display_end - old_end); 
+			wattron(tabs_window, color);
+				mvwprintw(tabs_window, 1, print_index, "%s ", this->tabs[tab]->name);
+			wattroff(tabs_window, color);
 		}
 		else
-			tab_displayed = true;
+		{
+			break; // No more space to print
+		}
+
+		print_index += tab_name_size + 1;
+	}
+
+	this->tab_display_end = tab;
+
+	// Clean unused tab space
+	for(size_t leftover = print_index; leftover < this->max_cols - 1; ++leftover )
+		mvwprintw(tabs_window, 1, leftover, " ");
+		
+	wrefresh(tabs_window);
+	refresh();
+}
+
+void tab_manager_update_limits(tab_manager_t * this)
+{
+	if(this->active_tab < this->tab_display_start)
+	{
+		this->tab_display_start = this->active_tab;
+		this->tab_display_end -= 1;
+	}
+	else if (this->active_tab >= this->tab_display_end)
+	{
+		this->tab_display_start += (this->active_tab - this->tab_display_end) + 1;
+		this->tab_display_end = this->active_tab + 1;
 	}
 }
 

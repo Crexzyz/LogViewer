@@ -24,7 +24,7 @@ void tab_manager_init(tab_manager_t * tm, size_t max_cols, size_t max_rows);
 void tab_manager_destroy(tab_manager_t * tm);
 
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window);
-void tab_manager_calc_tab_display_limits(tab_manager_t * this);
+void tab_manager_update_limits(tab_manager_t * this);
 void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, char* file_name, char * regex);
 void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win);
 void tab_manager_refresh_tab(tab_manager_t * this, bool color);
