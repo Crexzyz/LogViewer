@@ -94,12 +94,15 @@ void tab_manager_update_limits(tab_manager_t * this)
 
 void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
 {
-	input_window_t input;
-	input_window_init(&input, this->max_rows, this->max_cols);
-	input_window_get_input(&input);
-	tab_manager_add_tab(this, tab_win, input_window_get_tab_name(&input), input_window_get_file_name(&input), input_window_get_regex(&input));
+	input_window_t * iw = input_window_create();
+	input_window_show(iw);
+	input_window_destroy(iw);
+	// input_window_t input;
+	// input_window_init(&input, this->max_rows, this->max_cols);
+	// input_window_get_input(&input);
+	// tab_manager_add_tab(this, tab_win, input_window_get_tab_name(&input), input_window_get_file_name(&input), input_window_get_regex(&input));
 
-	input_window_destroy(&input);
+	// input_window_destroy(&input);
 }
 
 void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, char* file_name, char * regex)
