@@ -40,6 +40,16 @@ void tab_add_pad(tab_t * tab, size_t cols, size_t rows)
     }
 }
 
+int tab_get_line_color(char * line)
+{
+    if(strncmp(line, TAB_KEYWORD_INFO, strlen(TAB_KEYWORD_INFO)) == 0)
+        return COLOR_PAIR(HIGHLIGHT_YEL);
+    else if(strncmp(line, TAB_KEYWORD_ERROR, strlen(TAB_KEYWORD_ERROR)) == 0)
+        return COLOR_PAIR(HIGHLIGHT_ERROR);
+
+    return HIGHLIGHT_NONE;
+}
+
 void tab_print(tab_t * tab, bool color, FILE * file)
 {
     wmove(tab->window, 0, 0);
@@ -47,24 +57,18 @@ void tab_print(tab_t * tab, bool color, FILE * file)
     char buffer[tab->cols];
 	for(size_t line = 0; line < tab->rows; ++line)
 	{
+        memset(buffer, 0, tab->cols);
 	 	fgets(buffer, tab->cols, file);
-		buffer[ strlen(buffer)+1 ] = 0;
 
-		if(strncmp(buffer, "INFO", 4) == 0 && color)
-		{
-			wattron(tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
-			wprintw(tab->window, "%s", buffer);
-			wattroff(tab->window, COLOR_PAIR(HIGHLIGHT_YEL));
-		}
-		else if(strncmp(buffer, "ERROR", 5) == 0 && color)
-		{
-			wattron(tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));
-			wprintw(tab->window, "%s", buffer);
-			wattroff(tab->window, COLOR_PAIR(HIGHLIGHT_ERROR));	
-		}
-		else
-			wprintw(tab->window, "%s", buffer);
+        int color_code = tab_get_line_color(buffer);
+        if(!color || color_code == HIGHLIGHT_NONE)
+        {
+            wprintw(tab->window, "%s", buffer);
+            continue;
+        }
 
-		memset(buffer, 0, tab->cols);
+        wattron(tab->window, color_code);
+        wprintw(tab->window, "%s", buffer);
+        wattroff(tab->window, color_code);
 	}
 }

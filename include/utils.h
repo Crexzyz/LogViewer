@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define HIGHLIGHT_NONE -1
 #define HIGHLIGHT_ERROR 1
 #define HIGHLIGHT_WHITE 2
 #define HIGHLIGHT_YEL 3
