@@ -25,7 +25,7 @@
  * @param      number  The rows or columns of the terminal screen
  * @return     The soze of the rows or columns based on the requested screen usage.
  */
-#define CALCULATE_USAGE(number) number * (double)SCREEN_USAGE / 100.0
+#define IW_RESIZE(number, percentage) number * (double)percentage / 100.0
 
 /**
  * @brief      Calculates the coordinates where the window is going to be placed.
@@ -33,7 +33,7 @@
  * @param      usage_size  The size of the window
  * @return     The coordinate where the window must start drawing.
  */
-#define CALCULATE_COORDS(full_size, usage_size) (full_size - usage_size) / 2
+#define CENTER_WINDOW(full_size, usage_size) (full_size - usage_size) / 2
 
 typedef struct input_window
 {
@@ -43,8 +43,8 @@ typedef struct input_window
 	WINDOW * form_sub;
 } input_window_t;
 
-void input_window_init(input_window_t * iw);
-input_window_t * input_window_create();
+void input_window_init(input_window_t * iw, size_t rows, size_t cols);
+input_window_t * input_window_create(size_t rows, size_t cols);
 void input_window_destroy(input_window_t * iw);
 void input_window_show(input_window_t * iw);
 void input_window_handle_keys(input_window_t * iw, int ch);

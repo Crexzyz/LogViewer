@@ -5,29 +5,23 @@
 #define ROWS 24
 #define COLS 80
 
-input_window_t * input_window_create()
+input_window_t * input_window_create(size_t rows, size_t cols)
 {
     input_window_t * iw = malloc(sizeof(input_window_t));
     if(iw)
-        input_window_init(iw);
+        input_window_init(iw, rows, cols);
     return iw;
 }
 
-void input_window_init(input_window_t * iw)
+void input_window_init(input_window_t * iw, size_t rows, size_t cols)
 {
-    iw->form_win = newwin(ROWS, COLS, 0, 0);
-    box(iw->form_win, 0, 0);
-    wattron(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
-    mvwprintw(iw->form_win, 0, CENTER_TEXT(COLS, TITLE), TITLE);
-    wattroff(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
-
     iw->fields[IW_FIELDS_AMOUNT] = NULL;
     for(size_t field = 0; field < IW_FIELDS_AMOUNT; field += 2)
     {
         // Label
-        iw->fields[field] = new_field(1, 10, field, 0, 0, 0);
+        iw->fields[field] = new_field(1, 9, field, 0, 0, 0);
         // Input box
-        iw->fields[field + 1] = new_field(1, 40, field, 15, 0, 0);
+        iw->fields[field + 1] = new_field(1, 20, field, 10, 0, 0);
     }
 
     set_field_buffer(iw->fields[0], 0, IW_TAB_NAME_LABEL);
@@ -41,38 +35,59 @@ void input_window_init(input_window_t * iw)
     set_field_opts(iw->fields[4], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
 	set_field_opts(iw->fields[5], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
 
-	set_field_back(iw->fields[1], A_UNDERLINE);
-	set_field_back(iw->fields[3], A_UNDERLINE);
-    set_field_back(iw->fields[5], A_UNDERLINE);
+	set_field_back(iw->fields[1], COLOR_PAIR(HIGHLIGHT_WHITE));
+	set_field_back(iw->fields[3], COLOR_PAIR(HIGHLIGHT_WHITE));
+    set_field_back(iw->fields[5], COLOR_PAIR(HIGHLIGHT_WHITE));
 
     iw->form = new_form(iw->fields);
 
-    set_form_win(iw->form, iw->form_win);
-    set_form_sub(iw->form, derwin(iw->form_win, 18, 76, 1, 1));
-    post_form(iw->form);
+    int fixed_rows = 0;
+    int fixed_cols = 0;
+    scale_form(iw->form, &fixed_rows, &fixed_cols);
+    fixed_rows += 4;
+    fixed_cols += 4;
 
+    size_t start_row = CENTER_WINDOW(rows, fixed_rows);
+    size_t start_col = CENTER_WINDOW(cols, fixed_cols);
+
+    iw->form_win = newwin(fixed_rows, fixed_cols, start_row, start_col);
+    keypad(iw->form_win, true);
+    
+    set_form_win(iw->form, iw->form_win);
+    set_form_sub(iw->form, derwin(iw->form_win, fixed_rows - 4,
+                                  fixed_cols - 4, 2, 1));
+
+    box(iw->form_win, 0, 0);
+
+    wattron(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
+    mvwprintw(iw->form_win, 0, CENTER_TEXT(fixed_cols, TITLE), TITLE);
+    wattroff(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
 }
 
 void input_window_destroy(input_window_t * iw)
 {
     curs_set(0);
-    if(iw)
-    {
-        unpost_form(iw->form);
-        free_form(iw->form);
-        for(size_t field = 0; field < IW_FIELDS_AMOUNT; ++field)
-            free_field(iw->fields[field]);
-        delwin(iw->form_win);
-        free(iw);
-    }
+    if(!iw)
+        return;
+        
+    unpost_form(iw->form);
+    free_form(iw->form);
+    for(size_t field = 0; field < IW_FIELDS_AMOUNT; ++field)
+        free_field(iw->fields[field]);
+    delwin(iw->form_win);
+    free(iw);
 }
 
 void input_window_show(input_window_t * iw)
 {
-    curs_set(1);
-    keypad(iw->form_win, true);
-    refresh();
+    if(!iw)
+        return;
+
+    // TODO: Move cursor to first input
+    post_form(iw->form);
     wrefresh(iw->form_win);
+    refresh();
+    curs_set(1);
 
     int ch = 0;
     while( (ch = getch()) != KEY_F(1) )
@@ -108,6 +123,5 @@ void input_window_handle_keys(input_window_t * iw, int ch)
 			form_driver(iw->form, ch);
 			break;
     }
-
     wrefresh(iw->form_win);
 }

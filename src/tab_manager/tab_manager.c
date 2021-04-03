@@ -94,7 +94,7 @@ void tab_manager_update_limits(tab_manager_t * this)
 
 void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
 {
-	input_window_t * iw = input_window_create();
+	input_window_t * iw = input_window_create(this->max_rows, this->max_cols);
 	input_window_show(iw);
 	input_window_destroy(iw);
 	// input_window_t input;
