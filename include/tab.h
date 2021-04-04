@@ -39,8 +39,8 @@ void tab_print(tab_t * tab, bool color, FILE * file);
 int tab_get_line_color(char * line);
 
 static inline void tab_set_lines(tab_t * tab, size_t rows) { tab->rows = rows; }
-static inline void tab_set_name(tab_t * tab, char * name) { strncpy(tab->name, name, TAB_MAX_FILE_NAME); }
-static inline void tab_set_file_name(tab_t * tab, char * file) { strncpy(tab->file, file, TAB_MAX_TAB_NAME); }
+static inline void tab_set_name(tab_t * tab, char * name) { strncpy(tab->name, name, TAB_MAX_TAB_NAME); }
+static inline void tab_set_file_name(tab_t * tab, char * file) { strncpy(tab->file, file, TAB_MAX_FILE_NAME); }
 static inline void tab_set_regex(tab_t * tab, char * regex) { tab->has_regex = true; strncpy(tab->regex, regex, TAB_MAX_REGEX_SIZE); }
 
 
