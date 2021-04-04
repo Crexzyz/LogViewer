@@ -1,6 +1,7 @@
 #include "input_window/input_window.h"
 #include "utils.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 #define ROWS 24
 #define COLS 80
@@ -21,7 +22,7 @@ void input_window_init(input_window_t * iw, size_t rows, size_t cols)
         // Label
         iw->fields[field] = new_field(1, 9, field, 0, 0, 0);
         // Input box
-        iw->fields[field + 1] = new_field(1, 20, field, 10, 0, 0);
+        iw->fields[field + 1] = new_field(1, IW_INPUT_SIZE, field, 10, 0, 0);
     }
 
     set_field_buffer(iw->fields[0], 0, IW_TAB_NAME_LABEL);
@@ -29,15 +30,15 @@ void input_window_init(input_window_t * iw, size_t rows, size_t cols)
     set_field_buffer(iw->fields[4], 0, IW_REGEX_LABEL);
 
     set_field_opts(iw->fields[0], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-	set_field_opts(iw->fields[1], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
-	set_field_opts(iw->fields[2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-	set_field_opts(iw->fields[3], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+    set_field_opts(iw->fields[2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(iw->fields[4], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
-	set_field_opts(iw->fields[5], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
 
-	set_field_back(iw->fields[1], COLOR_PAIR(HIGHLIGHT_WHITE));
-	set_field_back(iw->fields[3], COLOR_PAIR(HIGHLIGHT_WHITE));
-    set_field_back(iw->fields[5], COLOR_PAIR(HIGHLIGHT_WHITE));
+    set_field_opts(iw->fields[IW_TAB_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+    set_field_opts(iw->fields[IW_FILE_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+    set_field_opts(iw->fields[IW_REGEX_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
+
+    set_field_back(iw->fields[IW_FILE_INDEX], COLOR_PAIR(HIGHLIGHT_WHITE));
+    set_field_back(iw->fields[IW_REGEX_INDEX], COLOR_PAIR(HIGHLIGHT_WHITE));
 
     iw->form = new_form(iw->fields);
 
@@ -90,38 +91,105 @@ void input_window_show(input_window_t * iw)
     curs_set(1);
 
     int ch = 0;
-    while( (ch = getch()) != KEY_F(1) )
-       input_window_handle_keys(iw, ch); 
+    while((ch = getch()) != '\n')
+    {
+        input_window_handle_keys(iw, ch); 
+    }
+    
+    // Save current field changes
+    form_driver(iw->form, REQ_END_LINE);
 }
 
 void input_window_handle_keys(input_window_t * iw, int ch)
 {
     switch(ch)
     {
+        case '\t':
         case KEY_DOWN:
-			form_driver(iw->form, REQ_NEXT_FIELD);
-			form_driver(iw->form, REQ_END_LINE);
-			break;
-		case KEY_UP:
-			form_driver(iw->form, REQ_PREV_FIELD);
-			form_driver(iw->form, REQ_END_LINE);
-			break;
-		case KEY_LEFT:
-			form_driver(iw->form, REQ_PREV_CHAR);
-			break;
-		case KEY_RIGHT:
-			form_driver(iw->form, REQ_NEXT_CHAR);
-			break;
-		case KEY_BACKSPACE:
-		case 127:
-			form_driver(iw->form, REQ_DEL_PREV);
-			break;
-		case KEY_DC:
-			form_driver(iw->form, REQ_DEL_CHAR);
-			break;
-		default:
-			form_driver(iw->form, ch);
-			break;
+            form_driver(iw->form, REQ_NEXT_FIELD);
+            form_driver(iw->form, REQ_END_LINE);
+            break;
+        case KEY_UP:
+            form_driver(iw->form, REQ_PREV_FIELD);
+            form_driver(iw->form, REQ_END_LINE);
+            break;
+        case KEY_LEFT:
+            form_driver(iw->form, REQ_PREV_CHAR);
+            break;
+        case KEY_RIGHT:
+            form_driver(iw->form, REQ_NEXT_CHAR);
+            break;
+        case KEY_BACKSPACE:
+        case 127:
+            form_driver(iw->form, REQ_DEL_PREV);
+            break;
+        case KEY_DC:
+            form_driver(iw->form, REQ_DEL_CHAR);
+            break;
+        case 383: // Shift + Delete
+            form_driver(iw->form, REQ_CLR_FIELD);
+            break;
+        default:
+            form_driver(iw->form, ch);
+            break;
     }
+    input_window_update_active_field(iw);
     wrefresh(iw->form_win);
+}
+
+char * input_window_get_field_data(input_window_t * iw, size_t index) 
+{
+    if(iw) 
+        return field_buffer(iw->fields[index], 0);
+    
+    return NULL;
+}
+
+void input_window_update_active_field(input_window_t * iw)
+{
+    FIELD * active = current_field(iw->form);
+    for(size_t field = 1; field < IW_FIELDS_AMOUNT; field += 2)
+    {
+        size_t color = COLOR_PAIR(HIGHLIGHT_WHITE);
+        if(active == iw->fields[field])
+            color = COLOR_PAIR(HIGHLIGHT_BLACK);
+        
+        set_field_back(iw->fields[field], color);
+    }
+}
+
+void rtrim_field(char * string, size_t dyn_len)
+{
+    size_t real_len = 0;
+    size_t last_char = 0;
+    bool empty = true;
+    
+    // Find last character in the dynamic-sized field
+    while(true)
+    {   
+        real_len += dyn_len;
+        for(size_t i = 0; i < real_len; ++i)
+        {
+            if(!isspace(string[i]))
+            {
+                last_char = i;
+                empty = false;
+            }
+        }
+
+        if(last_char < real_len - 1)
+            break;
+    }
+
+    if(empty)
+    {
+        string[0] = '\0';
+        return;
+    }    
+
+    // Clean all the whitespaces
+    for(size_t i = real_len - 1; i > last_char; --i)
+    {
+        string[i] = '\0';
+    }
 }
