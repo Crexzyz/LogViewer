@@ -33,6 +33,7 @@ void input_window_init(input_window_t * iw, size_t rows, size_t cols)
     set_field_opts(iw->fields[2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(iw->fields[4], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
 
+    
     set_field_opts(iw->fields[IW_TAB_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(iw->fields[IW_FILE_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(iw->fields[IW_REGEX_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
@@ -108,10 +109,12 @@ void input_window_handle_keys(input_window_t * iw, int ch)
         case KEY_DOWN:
             form_driver(iw->form, REQ_NEXT_FIELD);
             form_driver(iw->form, REQ_END_LINE);
+            input_window_update_active_field(iw);
             break;
         case KEY_UP:
             form_driver(iw->form, REQ_PREV_FIELD);
             form_driver(iw->form, REQ_END_LINE);
+            input_window_update_active_field(iw);
             break;
         case KEY_LEFT:
             form_driver(iw->form, REQ_PREV_CHAR);
@@ -133,7 +136,7 @@ void input_window_handle_keys(input_window_t * iw, int ch)
             form_driver(iw->form, ch);
             break;
     }
-    input_window_update_active_field(iw);
+    
     wrefresh(iw->form_win);
 }
 
@@ -170,6 +173,9 @@ void rtrim_field(char * string, size_t dyn_len)
         real_len += dyn_len;
         for(size_t i = 0; i < real_len; ++i)
         {
+            if(string[i] == '\0')
+                break;
+
             if(!isspace(string[i]))
             {
                 last_char = i;

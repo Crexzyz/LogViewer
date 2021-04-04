@@ -41,8 +41,8 @@ void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
     if(this->tab_amount == 0)
         return;
 
-    // Check limits
-    tab_manager_update_limits(this);
+    if (this->tab_amount > 1)
+        tab_manager_update_limits(this);
     
     const size_t printable_chars = this->max_cols - 2;
     size_t print_index = 1;
@@ -113,11 +113,13 @@ void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
 void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, char* file_name, char * regex)
 {
     // File name and existence validations
-    if(this->tab_amount == TAB_MANAGER_MAX_TABS) return; // TODO: Popup
+    if(this->tab_amount == TAB_MANAGER_MAX_TABS) 
+        return; // TODO: Popup
 
-    if(file_name[0] == 0) return;
+    if(file_name[0] == 0) 
+        return;
 
-    if(name[0] == 0) name = "<No name>";
+    name = name && name[0] == '\0' ? "<No name>" : name;
     
     tab_t * tab = tab_create();
     tab_set_name(tab, name);
@@ -208,7 +210,7 @@ FILE * tab_manager_open_file(tab_t * current_tab)
 
     if(file == NULL)
     {
-        mvprintw(0,0, "fail: [%s,%s,%s]", current_tab->name, current_tab->file, current_tab->regex);
+        mvprintw(0,0, "Failed to open [%s]", current_tab->file);
         refresh();
     }
     
