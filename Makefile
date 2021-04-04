@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Iinclude
 CFLAGS += -Wall -Wextra
-LDFLAGS = -lncurses
+LDFLAGS = -lncurses -lform
 
 SOURCE_DIR = src
 BUILD_DIR = build
