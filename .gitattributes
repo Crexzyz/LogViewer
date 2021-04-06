@@ -1,0 +1,3 @@
+# Set all header files as C files
+*.h linguist-language=C
+
