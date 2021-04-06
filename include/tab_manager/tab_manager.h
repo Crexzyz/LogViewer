@@ -5,22 +5,22 @@
 #include <ncurses.h>
 
 #include "tab.h"
+#include "context/context.h"
 
 #define TAB_MANAGER_MAX_TABS 20
 #define HELP_TAB_SIZE 1
 
 typedef struct tab_manager {
     tab_t * tabs[TAB_MANAGER_MAX_TABS];
+    context_t * context;
     size_t tab_amount;
 	size_t active_tab;
     size_t tab_display_start;
 	size_t tab_display_end;
-    size_t max_cols;
-    size_t max_rows;
 } tab_manager_t;
 
-tab_manager_t * tab_manager_create(size_t max_cols, size_t max_rows);
-void tab_manager_init(tab_manager_t * tm, size_t max_cols, size_t max_rows);
+tab_manager_t * tab_manager_create(context_t * context);
+void tab_manager_init(tab_manager_t * tm, context_t * context);
 void tab_manager_destroy(tab_manager_t * tm);
 
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window);

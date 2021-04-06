@@ -4,20 +4,19 @@
 
 #include <string.h>
 
-tab_manager_t * tab_manager_create(size_t max_cols, size_t max_rows)
+tab_manager_t * tab_manager_create(context_t * context)
 {
     tab_manager_t * tm = malloc(sizeof(tab_manager_t));
-    tab_manager_init(tm, max_cols, max_rows);
+    tab_manager_init(tm, context);
     return tm;
 }
 
-void tab_manager_init(tab_manager_t * tm, size_t max_cols, size_t max_rows)
+void tab_manager_init(tab_manager_t * tm, context_t * context)
 {
     if(tm)
     {
         bzero(tm, sizeof(tab_manager_t));
-        tm->max_cols = max_cols;
-        tm->max_rows = max_rows;
+        tm->context = context;
     }
 }
 
@@ -44,7 +43,7 @@ void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
     if (this->tab_amount > 1)
         tab_manager_update_limits(this);
     
-    const size_t printable_chars = this->max_cols - 2;
+    const size_t printable_chars = this->context->screen_cols - 2;
     size_t print_index = 1;
     size_t tab = 0;
 
@@ -71,7 +70,7 @@ void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
     this->tab_display_end = tab;
 
     // Clean unused tab space
-    for(size_t leftover = print_index; leftover < this->max_cols - 1; ++leftover )
+    for(size_t leftover = print_index; leftover < this->context->screen_cols - 1; ++leftover )
         mvwprintw(tabs_window, 1, leftover, " ");
         
     wrefresh(tabs_window);
@@ -94,7 +93,7 @@ void tab_manager_update_limits(tab_manager_t * this)
 
 void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
 {
-    input_window_t * iw = input_window_create(this->max_rows, this->max_cols);
+    input_window_t * iw = input_window_create(this->context->screen_rows, this->context->screen_cols);
     input_window_show(iw);
 
     char * tab_name = input_window_get_field_data(iw, IW_TAB_INDEX);
@@ -138,8 +137,8 @@ void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, ch
     fclose(file);
 
     // Smaller size than screen
-    if (lines < this->max_rows - 2 - HELP_TAB_SIZE) 
-        lines = this->max_rows;
+    if (lines < this->context->screen_rows - 2 - HELP_TAB_SIZE) 
+        lines = this->context->screen_rows;
 
     tab_set_lines(tab, lines);
 
@@ -148,7 +147,7 @@ void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, ch
     else
         tab_set_regex(tab, regex);
 
-    tab_add_pad(tab, this->max_cols, tab->rows);
+    tab_add_pad(tab, this->context->screen_cols, tab->rows);
 
     this->tabs[this->tab_amount] = tab;
     ++this->tab_amount;

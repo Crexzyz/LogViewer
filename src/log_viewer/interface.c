@@ -44,8 +44,7 @@ void interface_init(interface_t * this)
     this->context = context_create();
     context_set_dimensions(this->context);
 
-    this->tab_manager = tab_manager_create(this->context->screen_cols,
-                                           this->context->screen_rows);
+    this->tab_manager = tab_manager_create(this->context);
 
     refresh();
 
