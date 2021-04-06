@@ -1,5 +1,5 @@
 #include "tab_manager/tab_manager.h"
-#include "input_window/input_window.h"
+#include "windows/input_window.h"
 #include "utils.h"
 
 #include <string.h>

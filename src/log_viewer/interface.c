@@ -1,5 +1,5 @@
 #include "log_viewer/interface.h"
-#include "help_window/help_window.h"
+#include "windows/help_window.h"
 #include "utils.h"
 
 #include <string.h>
