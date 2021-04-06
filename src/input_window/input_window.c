@@ -6,15 +6,15 @@
 #define ROWS 24
 #define COLS 80
 
-input_window_t * input_window_create(size_t rows, size_t cols)
+input_window_t * input_window_create(context_t * context)
 {
     input_window_t * iw = malloc(sizeof(input_window_t));
     if(iw)
-        input_window_init(iw, rows, cols);
+        input_window_init(iw, context);
     return iw;
 }
 
-void input_window_init(input_window_t * iw, size_t rows, size_t cols)
+void input_window_init(input_window_t * iw, context_t * context)
 {
     iw->fields[IW_FIELDS_AMOUNT] = NULL;
     for(size_t field = 0; field < IW_FIELDS_AMOUNT; field += 2)
@@ -33,7 +33,6 @@ void input_window_init(input_window_t * iw, size_t rows, size_t cols)
     set_field_opts(iw->fields[2], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
     set_field_opts(iw->fields[4], O_VISIBLE | O_PUBLIC | O_AUTOSKIP);
 
-    
     set_field_opts(iw->fields[IW_TAB_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(iw->fields[IW_FILE_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
     set_field_opts(iw->fields[IW_REGEX_INDEX], O_VISIBLE | O_PUBLIC | O_EDIT | O_ACTIVE);
@@ -49,8 +48,8 @@ void input_window_init(input_window_t * iw, size_t rows, size_t cols)
     fixed_rows += 4;
     fixed_cols += 4;
 
-    size_t start_row = CENTER_WINDOW(rows, fixed_rows);
-    size_t start_col = CENTER_WINDOW(cols, fixed_cols);
+    size_t start_row = CENTER_WINDOW(context->screen_rows, fixed_rows);
+    size_t start_col = CENTER_WINDOW(context->screen_cols, fixed_cols);
 
     iw->form_win = newwin(fixed_rows, fixed_cols, start_row, start_col);
     keypad(iw->form_win, true);
@@ -125,6 +124,7 @@ void input_window_handle_keys(input_window_t * iw, int ch)
         case KEY_BACKSPACE:
         case 127:
             form_driver(iw->form, REQ_DEL_PREV);
+            input_window_update_active_field(iw);
             break;
         case KEY_DC:
             form_driver(iw->form, REQ_DEL_CHAR);

@@ -5,6 +5,8 @@
 #include <form.h>
 #include <string.h>
 
+#include "context/context.h"
+
 /// Window title
 #define TITLE "Open file"
 /// Percentage of the full screen that is going to be covered by the window
@@ -48,8 +50,8 @@ typedef struct input_window
 	WINDOW * form_win;
 } input_window_t;
 
-void input_window_init(input_window_t * iw, size_t rows, size_t cols);
-input_window_t * input_window_create(size_t rows, size_t cols);
+void input_window_init(input_window_t * iw, context_t * context);
+input_window_t * input_window_create(context_t * context);
 void input_window_destroy(input_window_t * iw);
 void input_window_show(input_window_t * iw);
 void input_window_handle_keys(input_window_t * iw, int ch);

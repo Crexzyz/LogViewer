@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "tab_manager/tab_manager.h"
+#include "context/context.h"
 
 #define OPENED_MAX 20
 
@@ -20,9 +21,7 @@ typedef struct interface
 	WINDOW * tabs_window;
 	WINDOW * help_window;
 	tab_manager_t * tab_manager;
-
-	int y_max;
-	int x_max;
+	context_t * context;
 
 	bool auto_refresh;
 	bool color;
