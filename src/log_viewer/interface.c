@@ -116,10 +116,12 @@ void interface_resize_windows(interface_t * this)
     context_set_dimensions(this->context);
 
     // Resize main window
-    interface_resize_window(this->tabs_window, "Log Viewer", CENTER, this->context->screen_rows-HELP_TAB_SIZE, this->context->screen_cols, true);
+    interface_resize_window(this->tabs_window, "Log Viewer", CENTER,
+                            this->context->screen_rows - HELP_TAB_SIZE,
+                            this->context->screen_cols, true);
 
     // Resize help window
-    mvwin(this->help_window, this->context->screen_rows-HELP_TAB_SIZE, 0);
+    mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
     interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE, this->context->screen_cols, false);
 
     // Refresh current tab

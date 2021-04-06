@@ -93,7 +93,7 @@ void tab_manager_update_limits(tab_manager_t * this)
 
 void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
 {
-    input_window_t * iw = input_window_create(this->context->screen_rows, this->context->screen_cols);
+    input_window_t * iw = input_window_create(this->context);
     input_window_show(iw);
 
     char * tab_name = input_window_get_field_data(iw, IW_TAB_INDEX);
@@ -164,14 +164,16 @@ void tab_manager_refresh_tab(tab_manager_t * this, bool color)
 {
     tab_t * current_tab = this->tabs[this->active_tab];
 
+    if(!current_tab)
+        return;
+
     FILE * file = tab_manager_open_file(current_tab);
 
-    if(file)
-    {
-        tab_print(current_tab, color, file);
+    if(!file)
+        return;
 
-        fclose(file);
-    }
+    tab_print(current_tab, color, file);
+    fclose(file);
 }
 
 void tab_manager_refresh_all_tabs(tab_manager_t * this, bool color)
