@@ -46,12 +46,12 @@ void interface_init(interface_t * this)
 
     this->tab_manager = tab_manager_create(this->context);
 
-    refresh();
-
     this->tabs_window = interface_new_boxed_window(this->context->screen_rows - HELP_TAB_SIZE,
                                                    this->context->screen_cols, 0, 0, "Log Viewer", CENTER);
     this->help_window = interface_new_window(HELP_TAB_SIZE, this->context->screen_cols,
                                              this->context->screen_rows - HELP_TAB_SIZE, 0);
+
+    refresh();
 }
 
 WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char * title, int position)
@@ -121,24 +121,12 @@ void interface_resize_windows(interface_t * this)
                             this->context->screen_cols, true);
 
     // Resize help window
+    interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE,
+                            this->context->screen_cols, false);
     mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
-    interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE, this->context->screen_cols, false);
-
-    // Refresh current tab
-    tab_manager_refresh_tab(this->tab_manager, this->color);
 
     // Refresh tabs indicator
     tab_manager_print_tabs(this->tab_manager, this->tabs_window);
-
-    // Refresh tab content
-    if(this->tab_manager->tab_amount > 0)
-    {
-        tab_manager_t * tm = this->tab_manager;
-        tab_t * tab = tm->tabs[tm->active_tab];		
-        
-        prefresh(tab->window, tab->last_row, 0, 
-            2, 1, this->context->screen_rows-2-HELP_TAB_SIZE, this->context->screen_cols-2);
-    }
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
@@ -146,7 +134,6 @@ void interface_resize_window(WINDOW * window, char * title, int position, int li
     wclear(window);
     wresize(window, lines, columns);
     interface_draw_borders(window, title, position, columns, draw_box);
-    wrefresh(window);
 }
 
 void interface_main(interface_t * this)
@@ -169,7 +156,9 @@ void interface_main(interface_t * this)
             tab_t * tab = tm->tabs[tm->active_tab];
 
             row = tab->last_row;
-            prefresh(tab->window, row, 0, 2, 1, this->context->screen_rows-2-HELP_TAB_SIZE, this->context->screen_cols-2);
+            prefresh(tab->window, row, 0, 2, 1,
+                     this->context->screen_rows - 2 - HELP_TAB_SIZE,
+                     this->context->screen_cols - 2);
         }
 
         // Auto refresh current tab
