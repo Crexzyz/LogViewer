@@ -86,12 +86,10 @@ void input_window_show(input_window_t * iw)
 
     // TODO: Move cursor to first input
     post_form(iw->form);
-    wrefresh(iw->form_win);
-    refresh();
     curs_set(1);
 
     int ch = 0;
-    while((ch = getch()) != '\n')
+    while((ch = wgetch(iw->form_win)) != '\n')
     {
         input_window_handle_keys(iw, ch); 
     }

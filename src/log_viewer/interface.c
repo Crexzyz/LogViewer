@@ -1,5 +1,6 @@
 #include "log_viewer/interface.h"
 #include "windows/help_window.h"
+#include "windows/window_builder.h"
 #include "utils.h"
 
 #include <string.h>
@@ -46,12 +47,16 @@ void interface_init(interface_t * this)
 
     this->tab_manager = tab_manager_create(this->context);
 
-    this->tabs_window = interface_new_boxed_window(this->context->screen_rows - HELP_TAB_SIZE,
-                                                   this->context->screen_cols, 0, 0, "Log Viewer", CENTER);
-    this->help_window = interface_new_window(HELP_TAB_SIZE, this->context->screen_cols,
-                                             this->context->screen_rows - HELP_TAB_SIZE, 0);
+    this->tabs_window = win_builder_set_title(
+        win_builder_set_box(
+            win_builder_newwin(this->context->screen_rows - HELP_TAB_SIZE,
+                               this->context->screen_cols, 0, 0)
+        ),
+        "Log Viewer", CENTER, this->context->screen_cols
+    );
 
-    refresh();
+    this->help_window = win_builder_newwin(HELP_TAB_SIZE, this->context->screen_cols,
+                                           this->context->screen_rows - HELP_TAB_SIZE, 0);
 }
 
 WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char * title, int position)
@@ -121,19 +126,73 @@ void interface_resize_windows(interface_t * this)
                             this->context->screen_cols, true);
 
     // Resize help window
+    mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
     interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE,
                             this->context->screen_cols, false);
-    mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
-
-    // Refresh tabs indicator
-    tab_manager_print_tabs(this->tab_manager, this->tabs_window);
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
 {
+    if(!window)
+        return;
+
     wclear(window);
     wresize(window, lines, columns);
-    interface_draw_borders(window, title, position, columns, draw_box);
+
+    if(draw_box)
+        win_builder_set_box(window);
+
+    if(title)
+        win_builder_set_title(window, title, position, columns);
+
+    win_builder_refresh(window);
+}
+
+void interface_run(interface_t * iface)
+{
+    while(true)
+    {
+        tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+        tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+
+        size_t input = wgetch(iface->tabs_window);
+        size_t opcode = interface_handle_input(iface, input);
+        mvwprintw(iface->help_window, 0,
+                  iface->context->screen_cols - 4, "%3d", input);
+        wrefresh(iface->help_window);
+
+        if(opcode == IFACE_EXIT)
+        {
+            break;
+        }
+        else if(opcode == IFACE_RESIZE)
+        {
+            interface_resize_windows(iface);
+        }
+        else if(opcode == IFACE_NOOP)
+        {
+            tab_manager_handle_input(iface->tab_manager, input);
+        }
+    }
+}
+
+size_t interface_handle_input(interface_t * interface, size_t input)
+{
+    if(input == 5)
+    {
+        return IFACE_EXIT;
+    }
+    else if (input == KEY_RESIZE)
+    {
+        return IFACE_RESIZE;
+    }
+    else if(input == 15) // ctrl + o
+    {
+        tab_manager_add_tab_popup(interface->tab_manager, interface->tabs_window);
+        return IFACE_TAB_ADDED;
+    }
+
+    return IFACE_NOOP;
 }
 
 void interface_main(interface_t * this)

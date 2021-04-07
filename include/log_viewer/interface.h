@@ -9,11 +9,13 @@
 
 #define OPENED_MAX 20
 
-enum text_positions
+enum interface_opcodes 
 {
-	LEFT,
-	CENTER,
-	RIGHT
+	IFACE_NOOP,
+	IFACE_EXIT,
+	IFACE_RESIZE,
+	IFACE_TAB_ADDED,
+	IFACE_TAB_HANDLE
 };
 
 typedef struct interface
@@ -48,8 +50,10 @@ void interface_draw_borders(WINDOW * win, char * title, int position, int col_si
 
 // Main function
 void interface_main(interface_t * this);
+void interface_run(interface_t * interface);
 
 // Input processing functions
+size_t interface_handle_input(interface_t * interface, size_t input);
 int interface_process_auto_refresh(interface_t * this, bool resized);
 int interface_process_options(interface_t * this, int input, bool * resized);
 int interface_process_tab_options(interface_t * this, int input, int row);

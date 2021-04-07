@@ -1,5 +1,8 @@
 #include "log_viewer/interface.h"
 #include "tab_manager/tab_manager.h"
+#include "windows/window_builder.h"
+#include "context/context.h"
+#include "utils.h"
 
 #include <ncurses.h>
 #include <string.h>
@@ -25,13 +28,11 @@ int main(int argc, char const *argv[])
 	interface_t * interface = interface_create();
 	interface_init(interface);
 
-	interface_refresh_all(interface);
-
 	if(argc > 1)
 		for (int i = 1; i < argc; ++i)
 			tab_manager_add_tab(interface->tab_manager, interface->tabs_window, (char*)argv[i], (char*)argv[i], 0);
 
-	interface_main(interface);
+	interface_run(interface);
 
 	interface_destroy(interface);
 	endwin();
