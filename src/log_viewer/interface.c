@@ -98,7 +98,7 @@ void interface_refresh_all(interface_t * this)
     refresh();
 }
 
-void interface_update_help_status(interface_t * this)
+void interface_refresh_status_bar(interface_t * this)
 {
     bool status[2] = {this->color, this->auto_refresh};
 
@@ -154,6 +154,7 @@ void interface_run(interface_t * iface)
     {
         tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
         tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+        interface_refresh_status_bar(iface);
 
         size_t input = wgetch(iface->tabs_window);
         size_t opcode = interface_handle_input(iface, input);
@@ -178,7 +179,7 @@ void interface_run(interface_t * iface)
 
 size_t interface_handle_input(interface_t * interface, size_t input)
 {
-    if(input == 5)
+    if(input == 5) // ctrl + e
     {
         return IFACE_EXIT;
     }
@@ -191,54 +192,52 @@ size_t interface_handle_input(interface_t * interface, size_t input)
         tab_manager_add_tab_popup(interface->tab_manager, interface->tabs_window);
         return IFACE_TAB_ADDED;
     }
+    else if(input == 8) // ctrl + h
+    {
+        interface_open_help(interface);
+        return IFACE_SKIP_TAB_MGR;
+    }
+    else if(input == 'c')
+    {
+        interface_toggle_color(interface);
+        return IFACE_SKIP_TAB_MGR;
+    }
+    else if(input == 'r')
+    {
+        interface_toggle_autorefresh(interface);
+        return IFACE_SKIP_TAB_MGR;
+    }
 
     return IFACE_NOOP;
 }
 
-void interface_main(interface_t * this)
+void interface_toggle_color(interface_t * iface)
 {
-    // Ventana, fila del pad, col del pad, fila de la ventana, col de pantalla, max de filas a refrescar, max de cols a refrescar
-    int row = 0;
-    bool resized = true;
-    int opcode = -1;
+    iface->color = !iface->color;
+}
 
-    keypad(this->tabs_window, TRUE);
-    while(true)
-    {
-        // Update color and auto-refresh status
-        interface_update_help_status(this);
+void interface_toggle_autorefresh(interface_t * iface)
+{
+    iface->auto_refresh = !iface->auto_refresh;
+}
 
-        // Update tab data if there are any
-        if(this->tab_manager->tab_amount > 0)
-        {
-            tab_manager_t * tm = this->tab_manager;
-            tab_t * tab = tm->tabs[tm->active_tab];
+void interface_open_help(interface_t * interface)
+{
+    help_window_t * hw = help_window_create(interface->context->screen_rows,
+                                            interface->context->screen_cols,
+                                            0, 0);
 
-            row = tab->last_row;
-            prefresh(tab->window, row, 0, 2, 1,
-                     this->context->screen_rows - 2 - HELP_TAB_SIZE,
-                     this->context->screen_cols - 2);
-        }
+    help_window_show(hw);
+    help_window_listen_keys(hw);
+    wclear(hw->window);
+    wrefresh(hw->window);
+    help_window_destroy(hw);
 
-        // Auto refresh current tab
-        opcode = interface_process_auto_refresh(this, resized);
-        if(opcode == 0)
-            continue;
+    interface_draw_borders(interface->tabs_window, "Log Viewer",
+                           CENTER, interface->context->screen_cols,
+                           true);
 
-        unsigned int input = wgetch(this->tabs_window);
-        mvwprintw(this->help_window, 0, this->context->screen_cols-4, "%3d", input);
-
-        // Process options-related keybindings
-        opcode = interface_process_options(this, input, &resized);
-        if(opcode == 0)
-            continue;
-        else if(opcode == 1)
-            break;
-
-        // Process tab-related keybindings
-        row = interface_process_tab_options(this, input, row);
-        
-    }
+    wrefresh(interface->tabs_window);
 }
 
 int interface_process_auto_refresh(interface_t * this, bool resized)
@@ -271,48 +270,6 @@ int interface_process_auto_refresh(interface_t * this, bool resized)
     }
 
     return 1;
-}
-
-int interface_process_options(interface_t * this, int input, bool * resized)
-{
-    if(input == KEY_RESIZE)
-    {
-        interface_resize_windows(this);
-        *resized = true;
-    }
-    else if(input == 15) // ctrl + o
-    {
-        tab_manager_add_tab_popup(this->tab_manager, this->tabs_window);
-    }
-    else if(input == 'c')
-    {
-        this->color = !this->color;
-        if(this->tab_manager->tab_amount > 0)
-            tab_manager_refresh_tab(this->tab_manager, this->color);
-    }
-    else if(input == 'r')
-    {
-        this->auto_refresh = !this->auto_refresh;
-    }
-    else if(input == 5) // ctrl + e
-    {
-        return 1;
-    }
-    else if(input == 8) // ctrl + h
-    {
-        help_window_t * hw = help_window_create(this->context->screen_rows, this->context->screen_cols, 0, 0);
-
-        help_window_show(hw);
-        help_window_listen_keys(hw);
-        help_window_destroy(hw);
-        
-        interface_draw_borders(this->tabs_window, "Log Viewer", CENTER, this->context->screen_cols, true);
-        wrefresh(this->tabs_window);
-    }
-    else
-        return 2;
-
-    return 0;
 }
 
 int interface_process_tab_options(interface_t * this, int input, int row)

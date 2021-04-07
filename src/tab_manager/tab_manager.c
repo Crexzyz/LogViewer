@@ -56,7 +56,7 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     {
         tm->active_tab = tm->active_tab == 0 ? tm->tab_amount - 1 : tm->active_tab - 1;
     }
-    else if(input == KEY_UP|| input == 65)
+    else if(input == KEY_UP || input == 65)
     {
         if(curr_tab->last_row != 0)
             curr_tab->last_row -= 1;
@@ -65,6 +65,19 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     {
         if(curr_tab->last_row < curr_tab->rows)
             curr_tab->last_row += 1;
+    }
+    else if(input == 'R')
+    {
+        tab_manager_refresh_tab(tm, true);
+    }
+    else if(input == 18) // ctrl + r
+    {
+        tab_manager_refresh_all_tabs(tm, true);
+    }
+    else if(input == 360 || input == 70) // end
+    {
+        curr_tab->last_row = curr_tab->rows - tm->context->screen_rows
+                             + HELP_TAB_SIZE + 3;
     }
 }
 
@@ -95,9 +108,13 @@ void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
     // TODO: handle color for each tab  
     tab_manager_refresh_tab(tm, true);
 
-    prefresh(tab->window, tab->last_row, 0, 2, 1,
-             tm->context->screen_rows - 2 - HELP_TAB_SIZE,
-             tm->context->screen_cols - 2);
+    prefresh(tab->window, // Window struct
+             tab->last_row, // Pad's row
+             0, // Pad's col
+             2, // Screen row
+             1, // Screen col
+             tm->context->screen_rows - 2 - HELP_TAB_SIZE, // Rows to print
+             tm->context->screen_cols - 2); // Cols to print
 }
 
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
