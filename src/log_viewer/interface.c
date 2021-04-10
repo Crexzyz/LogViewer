@@ -47,18 +47,27 @@ void interface_init(interface_t * this)
 
     this->tab_manager = tab_manager_create(this->context);
 
-    this->tabs_window = win_builder_set_title(
-        win_builder_set_box(
-            win_builder_newwin(this->context->screen_rows - HELP_TAB_SIZE,
-                               this->context->screen_cols, 0, 0)
-        ),
-        IFACE_TITLE, CENTER, this->context->screen_cols
-    );
+    win_builder_data_t tabs_data = {
+        .rows = this->context->screen_rows - HELP_TAB_SIZE,
+        .cols = this->context->screen_cols,
+        .box = true,
+        .title = IFACE_TITLE,
+        .position = CENTER,
+        .screen_cols = this->context->screen_cols,
+        .delay = WIN_DEFAULT_DELAY
+    };
 
-    win_builder_set_timeout(this->tabs_window, WIN_DEFAULT_DELAY, true);
+    this->tabs_window = win_builder_create(&tabs_data);
 
-    this->help_window = win_builder_newwin(HELP_TAB_SIZE, this->context->screen_cols,
-                                           this->context->screen_rows - HELP_TAB_SIZE, 0);
+    win_builder_data_t help_data = {
+        .rows = HELP_TAB_SIZE,
+        .cols = this->context->screen_cols,
+        .row_start = this->context->screen_rows - HELP_TAB_SIZE,
+        .col_start = 0,
+        .screen_cols = this->context->screen_cols,
+    };
+
+    this->help_window = win_builder_create(&help_data);
 }
 
 void interface_refresh_status_bar(interface_t * this)
@@ -101,12 +110,18 @@ void interface_resize_window(WINDOW * window, char * title, int position, int li
 
     wclear(window);
     wresize(window, lines, columns);
+    
+    win_builder_data_t title_data = {
+        .title = title,
+        .position = position,
+        .screen_cols = columns
+    };
 
     if(draw_box)
         win_builder_set_box(window);
 
     if(title)
-        win_builder_set_title(window, title, position, columns);
+        win_builder_set_title(window, &title_data);
 
     win_builder_refresh(window);
 }
@@ -199,14 +214,11 @@ void interface_toggle_autorefresh(interface_t * iface)
 
     iface->auto_refresh = !iface->auto_refresh;
 
-    if(iface->auto_refresh)
-    {
-        win_builder_set_timeout(iface->tabs_window, WIN_DEFAULT_DELAY, true);
-    }
-    else
-    {
-        win_builder_set_timeout(iface->tabs_window, 0, false);
-    }
+    win_builder_data_t data = { 
+        .delay = iface->auto_refresh ? WIN_DEFAULT_DELAY : 0
+    };
+
+    win_builder_set_timeout(iface->tabs_window, &data);
 }
 
 void interface_open_help(interface_t * interface)
@@ -221,10 +233,13 @@ void interface_open_help(interface_t * interface)
     wrefresh(hw->window);
     help_window_destroy(hw);
 
-    win_builder_set_title(
-        win_builder_set_box(interface->tabs_window),
-        IFACE_TITLE, CENTER, interface->context->screen_cols
-    );
+    win_builder_data_t title_data = {
+        .title = IFACE_TITLE,
+        .position = CENTER,
+        .screen_cols = interface->context->screen_cols
+    };
+
+    win_builder_set_title(interface->tabs_window, &title_data);
 
     wrefresh(interface->tabs_window);
 }

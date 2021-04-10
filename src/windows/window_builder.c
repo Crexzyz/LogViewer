@@ -3,9 +3,27 @@
 
 #include <string.h>
 
-WINDOW * win_builder_newwin(size_t rows, size_t cols, size_t row_start, size_t col_start)
+WINDOW * win_builder_create(win_builder_data_t * data)
 {
-    return newwin(rows, cols, row_start, col_start);
+    WINDOW * win = newwin(data->rows, data->cols,
+                          data->row_start, data->col_start);
+    
+    if(data->box)
+        win_builder_set_box(win);
+
+    if(data->title)
+        win_builder_set_title(win, data);
+
+    if(data->delay > 0)
+        win_builder_set_timeout(win, data);
+
+    return win;
+}
+
+WINDOW * win_builder_newwin(win_builder_data_t * data)
+{
+    return newwin(data->rows, data->cols, 
+                  data->row_start, data->col_start);
 }
 
 WINDOW * win_builder_set_box(WINDOW * window)
@@ -14,19 +32,21 @@ WINDOW * win_builder_set_box(WINDOW * window)
     return window;
 }
 
-WINDOW * win_builder_set_title(WINDOW * window, char * title, size_t position, size_t screen_cols)
+WINDOW * win_builder_set_title(WINDOW * window, win_builder_data_t * data)
 {
     wattron(window, COLOR_PAIR(HIGHLIGHT_WHITE));
-    switch (position)
+    switch (data->position)
     {
         case RIGHT:
-            mvwprintw(window, 0, RIGHT_TEXT(screen_cols, title), title);
+            mvwprintw(window, 0, RIGHT_TEXT(data->screen_cols, data->title),
+                      data->title);
             break;
         case CENTER:
-            mvwprintw(window, 0, CENTER_TEXT(screen_cols, title), title);
+            mvwprintw(window, 0, CENTER_TEXT(data->screen_cols, data->title),
+                      data->title);
             break;
         default:
-            mvwprintw(window, 0, 1, title);
+            mvwprintw(window, 0, 1, data->title);
             break;
     }
     wattroff(window, COLOR_PAIR(HIGHLIGHT_WHITE));
@@ -39,15 +59,15 @@ WINDOW * win_builder_refresh(WINDOW * window)
     return window;
 }
 
-WINDOW * win_builder_set_timeout(WINDOW * window, int delay, bool enabled)
+WINDOW * win_builder_set_timeout(WINDOW * window, win_builder_data_t * data)
 {
     if(!window)
         return NULL;
 
-    if(enabled)
+    if(data->delay > 0)
     {
         notimeout(window, false);
-        wtimeout(window, delay);
+        wtimeout(window, data->delay);
     }
     else
     {
