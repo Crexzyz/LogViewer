@@ -70,21 +70,24 @@ void interface_init(interface_t * this)
     this->help_window = win_builder_create(&help_data);
 }
 
-void interface_refresh_status_bar(interface_t * this)
+void interface_refresh_status_bar(interface_t * iface)
 {
-    bool status[2] = {this->color, this->auto_refresh};
+    bool status[2] = {
+        tab_manager_get_color(iface->tab_manager),
+        iface->auto_refresh
+    };
 
     for(size_t symbol = 0; symbol < STATUS_SYMBOLS; ++symbol)
     {
         if(status[symbol])
-            wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
+            wattron(iface->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
 
-        mvwprintw(this->help_window, 0, symbol, INTERFACE_SYMBOLS[symbol]);
+        mvwprintw(iface->help_window, 0, symbol, INTERFACE_SYMBOLS[symbol]);
 
-        wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));	
+        wattroff(iface->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));	
     }
 
-    wrefresh(this->help_window);
+    wrefresh(iface->help_window);
 }
 
 void interface_resize_windows(interface_t * this)
@@ -179,7 +182,7 @@ size_t interface_handle_input(interface_t * interface, size_t input)
     }
     else if(input == 15) // ctrl + o
     {
-        tab_manager_add_tab_popup(interface->tab_manager, interface->tabs_window);
+        tab_manager_add_tab_popup(interface->tab_manager);
         return IFACE_TAB_ADDED;
     }
     else if(input == 8) // ctrl + h
@@ -203,8 +206,10 @@ size_t interface_handle_input(interface_t * interface, size_t input)
 
 void interface_toggle_color(interface_t * iface)
 {
-    if(iface)
-        iface->color = !iface->color;
+    if(!iface)
+        return;
+
+    tab_manager_toggle_color(iface->tab_manager);
 }
 
 void interface_toggle_autorefresh(interface_t * iface)
