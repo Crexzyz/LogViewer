@@ -8,6 +8,7 @@
 #include "context/context.h"
 
 #define OPENED_MAX 20
+#define IFACE_TITLE "Log Viewer"
 
 enum interface_opcodes 
 {
@@ -15,7 +16,8 @@ enum interface_opcodes
 	IFACE_EXIT,
 	IFACE_RESIZE,
 	IFACE_TAB_ADDED,
-	IFACE_SKIP_TAB_MGR
+	IFACE_SKIP_TAB_MGR,
+	IFACE_TIMEOUT
 };
 
 typedef struct interface
@@ -44,21 +46,15 @@ void interface_destroy(interface_t * this);
 
 // Initialiaztion functions
 void interface_init(interface_t * this);
-WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char* name, int position);
-WINDOW * interface_new_window(int row_size, int col_size, int y_start, int x_start);
-void interface_draw_borders(WINDOW * win, char * title, int position, int col_size, bool draw_box);
 
 // Main function
 void interface_run(interface_t * interface);
 
 // Input processing functions
 size_t interface_handle_input(interface_t * interface, size_t input);
-int interface_process_auto_refresh(interface_t * this, bool resized);
-int interface_process_tab_options(interface_t * this, int input, int row);
 
-// Tab refreshing functions
+// Refreshing functions
 void interface_refresh_status_bar(interface_t * this);
-void interface_refresh_all(interface_t * this);
 
 // Window functions
 void interface_open_help(interface_t * interface);

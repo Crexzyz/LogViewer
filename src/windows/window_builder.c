@@ -38,3 +38,21 @@ WINDOW * win_builder_refresh(WINDOW * window)
     wrefresh(window);
     return window;
 }
+
+WINDOW * win_builder_set_timeout(WINDOW * window, int delay, bool enabled)
+{
+    if(!window)
+        return NULL;
+
+    if(enabled)
+    {
+        notimeout(window, false);
+        wtimeout(window, delay);
+    }
+    else
+    {
+        notimeout(window, true);
+    }
+
+    return window;
+}

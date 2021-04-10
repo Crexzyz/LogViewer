@@ -52,50 +52,13 @@ void interface_init(interface_t * this)
             win_builder_newwin(this->context->screen_rows - HELP_TAB_SIZE,
                                this->context->screen_cols, 0, 0)
         ),
-        "Log Viewer", CENTER, this->context->screen_cols
+        IFACE_TITLE, CENTER, this->context->screen_cols
     );
+
+    win_builder_set_timeout(this->tabs_window, WIN_DEFAULT_DELAY, true);
 
     this->help_window = win_builder_newwin(HELP_TAB_SIZE, this->context->screen_cols,
                                            this->context->screen_rows - HELP_TAB_SIZE, 0);
-}
-
-WINDOW * interface_new_boxed_window(int row_size, int col_size, int y_start, int x_start, char * title, int position)
-{
-    WINDOW * win = newwin(row_size, col_size, y_start, x_start);
-    interface_draw_borders(win, title, position, col_size, true);
-    return win;
-}
-
-void interface_draw_borders(WINDOW * win, char * title, int position, int col_size, bool draw_box)
-{
-    if(draw_box)
-        box(win, 0, 0);
-
-    if(title != NULL)
-    {
-        if(position == LEFT)
-            mvwprintw(win, 0, 1, title);
-        else if(position == CENTER)
-        {
-            wattron(win, COLOR_PAIR(HIGHLIGHT_WHITE));
-            mvwprintw(win, 0, CENTER_TEXT(col_size, title), title);
-            wattroff(win, COLOR_PAIR(HIGHLIGHT_WHITE));
-        }
-        else if(position == RIGHT)
-            mvwprintw(win, 0, RIGHT_TEXT(col_size, title), title);
-    }
-}
-
-WINDOW * interface_new_window(int row_size, int col_size, int y_start, int x_start)
-{
-    return newwin(row_size, col_size, y_start, x_start);
-}
-
-void interface_refresh_all(interface_t * this)
-{
-    wrefresh(this->tabs_window);
-    wrefresh(this->help_window);
-    refresh();
 }
 
 void interface_refresh_status_bar(interface_t * this)
@@ -121,7 +84,7 @@ void interface_resize_windows(interface_t * this)
     context_set_dimensions(this->context);
 
     // Resize main window
-    interface_resize_window(this->tabs_window, "Log Viewer", CENTER,
+    interface_resize_window(this->tabs_window, IFACE_TITLE, CENTER,
                             this->context->screen_rows - HELP_TAB_SIZE,
                             this->context->screen_cols, true);
 
@@ -150,16 +113,18 @@ void interface_resize_window(WINDOW * window, char * title, int position, int li
 
 void interface_run(interface_t * iface)
 {
+    // First-time print to avoid empty screen before first delay
+    tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+    tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+
     while(true)
     {
-        tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
-        tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         interface_refresh_status_bar(iface);
 
         size_t input = wgetch(iface->tabs_window);
         size_t opcode = interface_handle_input(iface, input);
-        mvwprintw(iface->help_window, 0,
-                  iface->context->screen_cols - 4, "%3d", input);
+        mvwprintw(iface->help_window, 0, iface->context->screen_cols - 4,
+                  "%3d", input);
         wrefresh(iface->help_window);
 
         if(opcode == IFACE_EXIT)
@@ -174,6 +139,12 @@ void interface_run(interface_t * iface)
         {
             tab_manager_handle_input(iface->tab_manager, input);
         }
+
+        if(iface->auto_refresh)
+        {
+            tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+            tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+        }
     }
 }
 
@@ -182,6 +153,10 @@ size_t interface_handle_input(interface_t * interface, size_t input)
     if(input == 5) // ctrl + e
     {
         return IFACE_EXIT;
+    }
+    else if((int)input == -1) // timeout
+    {
+        return IFACE_TIMEOUT;
     }
     else if (input == KEY_RESIZE)
     {
@@ -213,12 +188,25 @@ size_t interface_handle_input(interface_t * interface, size_t input)
 
 void interface_toggle_color(interface_t * iface)
 {
-    iface->color = !iface->color;
+    if(iface)
+        iface->color = !iface->color;
 }
 
 void interface_toggle_autorefresh(interface_t * iface)
 {
+    if(!iface)
+        return;
+
     iface->auto_refresh = !iface->auto_refresh;
+
+    if(iface->auto_refresh)
+    {
+        win_builder_set_timeout(iface->tabs_window, WIN_DEFAULT_DELAY, true);
+    }
+    else
+    {
+        win_builder_set_timeout(iface->tabs_window, 0, false);
+    }
 }
 
 void interface_open_help(interface_t * interface)
@@ -233,81 +221,10 @@ void interface_open_help(interface_t * interface)
     wrefresh(hw->window);
     help_window_destroy(hw);
 
-    interface_draw_borders(interface->tabs_window, "Log Viewer",
-                           CENTER, interface->context->screen_cols,
-                           true);
+    win_builder_set_title(
+        win_builder_set_box(interface->tabs_window),
+        IFACE_TITLE, CENTER, interface->context->screen_cols
+    );
 
     wrefresh(interface->tabs_window);
-}
-
-int interface_process_auto_refresh(interface_t * this, bool resized)
-{
-    if (this->auto_refresh)
-    {
-        if(!resized)
-        {
-            fd_set fds;
-            int maxfd = 0;
-
-            // Set a 1 second timer
-            struct timeval timer;
-            timer.tv_sec = 1;
-            // Clean fd set
-               FD_ZERO(&fds);
-               // Add stdin to set
-            FD_SET(0, &fds); 
-            // Wait 1 second for user input
-            select(maxfd+1, &fds, NULL, NULL, &timer); 
-            // (Conditional not really necessary) If stdin is in set, update current tab
-            if (!FD_ISSET(0, &fds))
-            {
-                if(this->tab_manager->tab_amount > 0)
-                    tab_manager_refresh_tab(this->tab_manager, this->color);
-            }
-
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-int interface_process_tab_options(interface_t * this, int input, int row)
-{
-    if(this->tab_manager->tab_amount > 0)
-    {
-        tab_manager_t * tm = this->tab_manager;
-        tab_t * active_tab = tm->tabs[tm->active_tab];
-
-        if(input == KEY_RIGHT)
-        {
-            tm->active_tab = (tm->active_tab + 1) % tm->tab_amount;
-            tab_manager_print_tabs(this->tab_manager, this->tabs_window);
-        }
-        else if(input == KEY_LEFT)
-        {
-            tm->active_tab = tm->active_tab == 0 ? tm->tab_amount - 1 : tm->active_tab - 1; 
-            tab_manager_print_tabs(this->tab_manager, this->tabs_window);	
-        }
-        else if(input == KEY_UP)
-        {
-            row = row-1 < 0 ? -1 : row-1;
-            active_tab->last_row = row;
-        }
-        else if(input == 269) // F5
-        {
-            tab_manager_refresh_tab(this->tab_manager, this->color);
-            wrefresh(active_tab->window);
-        }
-        else if(input == 'R') // shift R
-            tab_manager_refresh_all_tabs(this->tab_manager, this->color);
-        else if(input == 360) // end
-            active_tab->last_row = active_tab->rows - this->context->screen_rows+2+HELP_TAB_SIZE;
-        else
-        {
-            ++row;
-            active_tab->last_row = row;
-        }
-    }
-    return row;
 }
