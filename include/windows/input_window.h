@@ -8,7 +8,7 @@
 #include "context/context.h"
 
 /// Window title
-#define TITLE "Open file"
+#define IW_TITLE "Open file"
 /// Percentage of the full screen that is going to be covered by the window
 #define SCREEN_USAGE 40
 /// File name buffer size

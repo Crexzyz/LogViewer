@@ -1,10 +1,8 @@
 #include "windows/input_window.h"
+#include "windows/window_builder.h"
 #include "utils.h"
 #include <stdlib.h>
 #include <ctype.h>
-
-#define ROWS 24
-#define COLS 80
 
 input_window_t * input_window_create(context_t * context)
 {
@@ -51,18 +49,23 @@ void input_window_init(input_window_t * iw, context_t * context)
     size_t start_row = CENTER_WINDOW(context->screen_rows, fixed_rows);
     size_t start_col = CENTER_WINDOW(context->screen_cols, fixed_cols);
 
-    iw->form_win = newwin(fixed_rows, fixed_cols, start_row, start_col);
-    keypad(iw->form_win, true);
+    win_builder_data_t data = {
+        .rows = fixed_rows,
+        .cols = fixed_cols,
+        .row_start = start_row,
+        .col_start = start_col,
+        .box = true,
+        .title = IW_TITLE,
+        .position = CENTER,
+        .screen_cols = fixed_cols
+    };
+
+    iw->form_win = win_builder_create(&data);
     
+    keypad(iw->form_win, true);
     set_form_win(iw->form, iw->form_win);
     set_form_sub(iw->form, derwin(iw->form_win, fixed_rows - 4,
                                   fixed_cols - 4, 2, 1));
-
-    box(iw->form_win, 0, 0);
-
-    wattron(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
-    mvwprintw(iw->form_win, 0, CENTER_TEXT(fixed_cols, TITLE), TITLE);
-    wattroff(iw->form_win, COLOR_PAIR(HIGHLIGHT_WHITE));
 }
 
 void input_window_destroy(input_window_t * iw)
