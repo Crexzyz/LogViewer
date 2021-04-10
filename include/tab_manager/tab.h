@@ -28,6 +28,7 @@ typedef struct tab
     size_t cols;
 	size_t rows;
 	bool has_regex;
+	bool color;
 
 } tab_t;
 
@@ -35,8 +36,9 @@ tab_t * tab_create();
 void tab_destroy(tab_t * tab);
 void tab_add_pad(tab_t * tab, size_t cols, size_t rows);
 void tab_init(tab_t * tab);
-void tab_print(tab_t * tab, bool color, FILE * file);
+void tab_print(tab_t * tab, FILE * file);
 int tab_get_line_color(char * line);
+void tab_toggle_color(tab_t * tab);
 
 static inline void tab_set_lines(tab_t * tab, size_t rows) { tab->rows = rows; }
 static inline void tab_set_name(tab_t * tab, char * name) { strncpy(tab->name, name, TAB_MAX_TAB_NAME); }

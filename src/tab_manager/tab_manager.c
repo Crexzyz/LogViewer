@@ -68,11 +68,11 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     }
     else if(input == 'R')
     {
-        tab_manager_refresh_tab(tm, true);
+        tab_manager_refresh_tab(tm);
     }
     else if(input == 18) // ctrl + r
     {
-        tab_manager_refresh_all_tabs(tm, true);
+        tab_manager_refresh_all_tabs(tm);
     }
     else if(input == 360 || input == 70) // end
     {
@@ -105,8 +105,7 @@ void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
     if(!tab)
         return;
 
-    // TODO: handle color for each tab  
-    tab_manager_refresh_tab(tm, true);
+    tab_manager_refresh_tab(tm);
 
     prefresh(tab->window, // Window struct
              tab->last_row, // Pad's row
@@ -120,7 +119,11 @@ void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
 {
     if(this->tab_amount == 0)
+    {
+        for(size_t i = 1; i < this->context->screen_cols - 1 ; ++i )
+            mvwprintw(tabs_window, 1, i, " ");
         return;
+    }
 
     // If first time updating limits
     if (this->tab_display_start != 0 && this->tab_display_end != 0)
@@ -173,7 +176,7 @@ void tab_manager_update_limits(tab_manager_t * this)
     }
 }
 
-void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
+void tab_manager_add_tab_popup(tab_manager_t * this)
 {
     input_window_t * iw = input_window_create(this->context);
     input_window_show(iw);
@@ -186,12 +189,12 @@ void tab_manager_add_tab_popup(tab_manager_t * this, WINDOW * tab_win)
     rtrim_field(file_name, IW_INPUT_SIZE);
     rtrim_field(regex, IW_INPUT_SIZE);
 
-    tab_manager_add_tab(this, tab_win, tab_name, file_name, regex);
+    tab_manager_add_tab(this, tab_name, file_name, regex);
 
     input_window_destroy(iw);
 }
 
-void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, char* file_name, char * regex)
+void tab_manager_add_tab(tab_manager_t * this, char * name, char* file_name, char * regex)
 {
     // File name and existence validations
     if(this->tab_amount == TAB_MANAGER_MAX_TABS) 
@@ -235,7 +238,7 @@ void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, ch
     ++this->tab_amount;
 }
 
-void tab_manager_refresh_tab(tab_manager_t * this, bool color)
+void tab_manager_refresh_tab(tab_manager_t * this)
 {
     tab_t * current_tab = this->tabs[this->active_tab];
 
@@ -247,17 +250,17 @@ void tab_manager_refresh_tab(tab_manager_t * this, bool color)
     if(!file)
         return;
 
-    tab_print(current_tab, color, file);
+    tab_print(current_tab, file);
     fclose(file);
 }
 
-void tab_manager_refresh_all_tabs(tab_manager_t * this, bool color)
+void tab_manager_refresh_all_tabs(tab_manager_t * this)
 {
     size_t active_tab_aux = this->active_tab;
     for (size_t tab = 0; tab < this->tab_amount; ++tab)
     {
         this->active_tab = tab;
-        tab_manager_refresh_tab(this, color);
+        tab_manager_refresh_tab(this);
     }
 
     this->active_tab = active_tab_aux;
@@ -303,4 +306,53 @@ int tab_manager_get_lines(FILE * file)
 
     rewind(file);
     return count;
+}
+
+void tab_manager_toggle_color(tab_manager_t * tm)
+{
+    if(!tm)
+        return;
+
+    if(tm->tab_amount == 0)
+        return;
+
+    tab_toggle_color(tab_manager_get_active_tab(tm));
+}
+
+bool tab_manager_get_color(tab_manager_t * tm)
+{
+    if(!tm)
+        return true;
+    
+    tab_t * current = tab_manager_get_active_tab(tm);
+
+    if(!current)
+        return true;
+
+    return current->color;
+}
+
+void tab_manager_close_tab(tab_manager_t * tm)
+{
+    if(!tm)
+        return;
+
+    tab_t * current = tab_manager_get_active_tab(tm);
+
+    if(!current)
+        return;
+        
+    tab_destroy(current);
+
+    // Rearrange pointers
+    for(size_t tab = 0; tab < tm->tab_amount - 1; ++tab)
+    {
+        if(tab >= tm->active_tab)
+        {
+            tm->tabs[tab] = tm->tabs[tab + 1];
+            tm->tabs[tab + 1] = NULL;
+        }
+    }
+
+    tm->tab_amount -= 1;
 }

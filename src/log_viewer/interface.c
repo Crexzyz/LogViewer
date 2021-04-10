@@ -70,21 +70,24 @@ void interface_init(interface_t * this)
     this->help_window = win_builder_create(&help_data);
 }
 
-void interface_refresh_status_bar(interface_t * this)
+void interface_refresh_status_bar(interface_t * iface)
 {
-    bool status[2] = {this->color, this->auto_refresh};
+    bool status[2] = {
+        tab_manager_get_color(iface->tab_manager),
+        iface->auto_refresh
+    };
 
     for(size_t symbol = 0; symbol < STATUS_SYMBOLS; ++symbol)
     {
         if(status[symbol])
-            wattron(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
+            wattron(iface->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));
 
-        mvwprintw(this->help_window, 0, symbol, INTERFACE_SYMBOLS[symbol]);
+        mvwprintw(iface->help_window, 0, symbol, INTERFACE_SYMBOLS[symbol]);
 
-        wattroff(this->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));	
+        wattroff(iface->help_window, COLOR_PAIR(HIGHLIGHT_WHITE));	
     }
 
-    wrefresh(this->help_window);
+    wrefresh(iface->help_window);
 }
 
 void interface_resize_windows(interface_t * this)
@@ -153,11 +156,18 @@ void interface_run(interface_t * iface)
         else if(opcode == IFACE_NOOP)
         {
             tab_manager_handle_input(iface->tab_manager, input);
+            // It is needed to refresh the file when moving between tabs
+            tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+            tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         }
 
-        if(iface->auto_refresh)
+        if(opcode == IFACE_TAB_CLOSED || iface->auto_refresh)
         {
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+
+            if(iface->tab_manager->tab_amount == 0)
+                interface_clear_content(iface);
+
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         }
     }
@@ -179,8 +189,13 @@ size_t interface_handle_input(interface_t * interface, size_t input)
     }
     else if(input == 15) // ctrl + o
     {
-        tab_manager_add_tab_popup(interface->tab_manager, interface->tabs_window);
+        tab_manager_add_tab_popup(interface->tab_manager);
         return IFACE_TAB_ADDED;
+    }
+    else if(input == 23) // ctrl + w
+    {
+        tab_manager_close_tab(interface->tab_manager);
+        return IFACE_TAB_CLOSED;
     }
     else if(input == 8) // ctrl + h
     {
@@ -203,8 +218,10 @@ size_t interface_handle_input(interface_t * interface, size_t input)
 
 void interface_toggle_color(interface_t * iface)
 {
-    if(iface)
-        iface->color = !iface->color;
+    if(!iface)
+        return;
+
+    tab_manager_toggle_color(iface->tab_manager);
 }
 
 void interface_toggle_autorefresh(interface_t * iface)
@@ -242,4 +259,15 @@ void interface_open_help(interface_t * interface)
     win_builder_set_title(interface->tabs_window, &title_data);
 
     wrefresh(interface->tabs_window);
+}
+
+void interface_clear_content(interface_t * iface)
+{
+    for(size_t i = 1; i < iface->context->screen_rows - 2; ++i)
+    {
+        mvwprintw(iface->tabs_window, i, 1, "%*s",
+                  iface->context->screen_cols - 2, "");
+    }
+
+    wrefresh(iface->tabs_window);
 }

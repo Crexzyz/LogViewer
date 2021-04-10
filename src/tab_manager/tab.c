@@ -1,4 +1,4 @@
-#include "tab.h"
+#include "tab_manager/tab.h"
 #include "utils.h"
 
 #include <stdlib.h>
@@ -12,8 +12,11 @@ tab_t * tab_create()
 
 void tab_init(tab_t * tab)
 {
-    if(tab) 
-        bzero(tab, sizeof(tab_t));
+    if(!tab)
+        return;
+
+    bzero(tab, sizeof(tab_t));
+    tab->color = true;
 }
 
 void tab_destroy(tab_t * tab)
@@ -50,7 +53,7 @@ int tab_get_line_color(char * line)
     return HIGHLIGHT_NONE;
 }
 
-void tab_print(tab_t * tab, bool color, FILE * file)
+void tab_print(tab_t * tab, FILE * file)
 {
     wmove(tab->window, 0, 0);
 
@@ -61,7 +64,7 @@ void tab_print(tab_t * tab, bool color, FILE * file)
 	 	fgets(buffer, tab->cols, file);
 
         int color_code = tab_get_line_color(buffer);
-        if(!color || color_code == HIGHLIGHT_NONE)
+        if(!tab->color || color_code == HIGHLIGHT_NONE)
         {
             wprintw(tab->window, "%s", buffer);
             continue;
@@ -71,4 +74,12 @@ void tab_print(tab_t * tab, bool color, FILE * file)
         wprintw(tab->window, "%s", buffer);
         wattroff(tab->window, color_code);
 	}
+}
+
+void tab_toggle_color(tab_t * tab)
+{
+    if(!tab)
+        return;
+
+    tab->color = !tab->color;
 }
