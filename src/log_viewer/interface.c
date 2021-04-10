@@ -161,9 +161,13 @@ void interface_run(interface_t * iface)
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         }
 
-        if(iface->auto_refresh)
+        if(opcode == IFACE_TAB_CLOSED || iface->auto_refresh)
         {
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+
+            if(iface->tab_manager->tab_amount == 0)
+                interface_clear_content(iface);
+
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         }
     }
@@ -187,6 +191,11 @@ size_t interface_handle_input(interface_t * interface, size_t input)
     {
         tab_manager_add_tab_popup(interface->tab_manager);
         return IFACE_TAB_ADDED;
+    }
+    else if(input == 23) // ctrl + w
+    {
+        tab_manager_close_tab(interface->tab_manager);
+        return IFACE_TAB_CLOSED;
     }
     else if(input == 8) // ctrl + h
     {
@@ -250,4 +259,15 @@ void interface_open_help(interface_t * interface)
     win_builder_set_title(interface->tabs_window, &title_data);
 
     wrefresh(interface->tabs_window);
+}
+
+void interface_clear_content(interface_t * iface)
+{
+    for(size_t i = 1; i < iface->context->screen_rows - 2; ++i)
+    {
+        mvwprintw(iface->tabs_window, i, 1, "%*s",
+                  iface->context->screen_cols - 2, "");
+    }
+
+    wrefresh(iface->tabs_window);
 }

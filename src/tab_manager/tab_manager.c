@@ -119,7 +119,11 @@ void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
 {
     if(this->tab_amount == 0)
+    {
+        for(size_t i = 1; i < this->context->screen_cols - 1 ; ++i )
+            mvwprintw(tabs_window, 1, i, " ");
         return;
+    }
 
     // If first time updating limits
     if (this->tab_display_start != 0 && this->tab_display_end != 0)
@@ -326,4 +330,29 @@ bool tab_manager_get_color(tab_manager_t * tm)
         return true;
 
     return current->color;
+}
+
+void tab_manager_close_tab(tab_manager_t * tm)
+{
+    if(!tm)
+        return;
+
+    tab_t * current = tab_manager_get_active_tab(tm);
+
+    if(!current)
+        return;
+        
+    tab_destroy(current);
+
+    // Rearrange pointers
+    for(size_t tab = 0; tab < tm->tab_amount - 1; ++tab)
+    {
+        if(tab >= tm->active_tab)
+        {
+            tm->tabs[tab] = tm->tabs[tab + 1];
+            tm->tabs[tab + 1] = NULL;
+        }
+    }
+
+    tm->tab_amount -= 1;
 }

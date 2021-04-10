@@ -17,7 +17,8 @@ enum interface_opcodes
 	IFACE_RESIZE,
 	IFACE_TAB_ADDED,
 	IFACE_SKIP_TAB_MGR,
-	IFACE_TIMEOUT
+	IFACE_TIMEOUT,
+	IFACE_TAB_CLOSED
 };
 
 typedef struct interface
@@ -55,6 +56,7 @@ size_t interface_handle_input(interface_t * interface, size_t input);
 
 // Refreshing functions
 void interface_refresh_status_bar(interface_t * this);
+void interface_clear_content(interface_t * this);
 
 // Window functions
 void interface_open_help(interface_t * interface);

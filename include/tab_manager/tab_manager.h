@@ -44,6 +44,7 @@ void tab_manager_add_tab(tab_manager_t * this, char * name, char* file_name, cha
 void tab_manager_add_tab_popup(tab_manager_t * this);
 void tab_manager_toggle_color(tab_manager_t * tm);
 bool tab_manager_get_color(tab_manager_t * tm);
+void tab_manager_close_tab(tab_manager_t * tm);
 
 // Other
 FILE * tab_manager_open_file(tab_t * current_tab);
