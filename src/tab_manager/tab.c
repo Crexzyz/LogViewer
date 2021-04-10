@@ -1,4 +1,4 @@
-#include "tab.h"
+#include "tab_manager/tab.h"
 #include "utils.h"
 
 #include <stdlib.h>
@@ -71,4 +71,12 @@ void tab_print(tab_t * tab, bool color, FILE * file)
         wprintw(tab->window, "%s", buffer);
         wattroff(tab->window, color_code);
 	}
+}
+
+void tab_toggle_color(tab_t * tab)
+{
+    if(!tab)
+        return;
+
+    tab->color = !tab->color;
 }
