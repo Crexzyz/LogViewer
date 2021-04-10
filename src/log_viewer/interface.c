@@ -156,6 +156,9 @@ void interface_run(interface_t * iface)
         else if(opcode == IFACE_NOOP)
         {
             tab_manager_handle_input(iface->tab_manager, input);
+            // It is needed to refresh the file when moving between tabs
+            tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
+            tab_manager_print_active(iface->tab_manager, iface->tabs_window);
         }
 
         if(iface->auto_refresh)
