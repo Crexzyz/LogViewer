@@ -13,4 +13,11 @@
 
 #define KEY_ESC 27
 
+enum text_positions
+{
+	LEFT,
+	CENTER,
+	RIGHT
+};
+
 #endif

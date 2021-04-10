@@ -1,5 +1,5 @@
 #include "tab_manager/tab_manager.h"
-#include "input_window/input_window.h"
+#include "windows/input_window.h"
 #include "utils.h"
 
 #include <string.h>
@@ -35,12 +35,95 @@ void tab_manager_destroy(tab_manager_t * tm)
     }
 }
 
+void tab_manager_handle_input(tab_manager_t * tm, size_t input)
+{
+    if(!tm)
+        return;
+
+    if(tm->tab_amount == 0)
+        return;
+
+    tab_t * curr_tab = tab_manager_get_active_tab(tm);
+
+    if(!curr_tab)
+        return;
+
+    if(input == KEY_RIGHT || input == 67)
+    {
+        tm->active_tab = (tm->active_tab + 1) % tm->tab_amount;
+    }
+    else if(input == KEY_LEFT || input == 68)
+    {
+        tm->active_tab = tm->active_tab == 0 ? tm->tab_amount - 1 : tm->active_tab - 1;
+    }
+    else if(input == KEY_UP || input == 65)
+    {
+        if(curr_tab->last_row != 0)
+            curr_tab->last_row -= 1;
+    }
+    else if(input == KEY_DOWN || input == 66)
+    {
+        if(curr_tab->last_row < curr_tab->rows)
+            curr_tab->last_row += 1;
+    }
+    else if(input == 'R')
+    {
+        tab_manager_refresh_tab(tm, true);
+    }
+    else if(input == 18) // ctrl + r
+    {
+        tab_manager_refresh_all_tabs(tm, true);
+    }
+    else if(input == 360 || input == 70) // end
+    {
+        curr_tab->last_row = curr_tab->rows - tm->context->screen_rows
+                             + HELP_TAB_SIZE + 3;
+    }
+}
+
+tab_t * tab_manager_get_active_tab(tab_manager_t * tm)
+{
+    if(!tm)
+        return NULL;
+    
+    if(tm->tab_amount > 0)
+        return tm->tabs[tm->active_tab];
+
+    return NULL;
+}
+
+void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
+{
+    if(!tm || !target_window)
+        return;
+
+    if(tm->tab_amount == 0)
+        return;
+
+    tab_t * tab = tab_manager_get_active_tab(tm);
+
+    if(!tab)
+        return;
+
+    // TODO: handle color for each tab  
+    tab_manager_refresh_tab(tm, true);
+
+    prefresh(tab->window, // Window struct
+             tab->last_row, // Pad's row
+             0, // Pad's col
+             2, // Screen row
+             1, // Screen col
+             tm->context->screen_rows - 2 - HELP_TAB_SIZE, // Rows to print
+             tm->context->screen_cols - 2); // Cols to print
+}
+
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
 {
     if(this->tab_amount == 0)
         return;
 
-    if (this->tab_amount > 1)
+    // If first time updating limits
+    if (this->tab_display_start != 0 && this->tab_display_end != 0)
         tab_manager_update_limits(this);
     
     const size_t printable_chars = this->context->screen_cols - 2;
@@ -74,7 +157,6 @@ void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
         mvwprintw(tabs_window, 1, leftover, " ");
         
     wrefresh(tabs_window);
-    refresh();
 }
 
 void tab_manager_update_limits(tab_manager_t * this)
@@ -133,7 +215,7 @@ void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, ch
     }
 
     // Count file's lines
-    size_t lines = tab_manager_get_lines(file) + 2;
+    size_t lines = tab_manager_get_lines(file);
     fclose(file);
 
     // Smaller size than screen
@@ -151,13 +233,6 @@ void tab_manager_add_tab(tab_manager_t * this, WINDOW * tab_win, char * name, ch
 
     this->tabs[this->tab_amount] = tab;
     ++this->tab_amount;
-    tab_manager_print_tabs(this, tab_win);
-    
-    // Update newly added tab and set pointer back to the current tab
-    size_t active_aux = this->active_tab;
-    this->active_tab = this->tab_amount-1;
-    tab_manager_refresh_tab(this, true);
-    this->active_tab = active_aux;
 }
 
 void tab_manager_refresh_tab(tab_manager_t * this, bool color)
