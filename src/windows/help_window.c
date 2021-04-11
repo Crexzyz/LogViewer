@@ -6,16 +6,16 @@
 
 const char HELP_WINDOW_TEXTS[HELP_OPTIONS_COUNT][MAX_HELP_TEXT_SIZE] =
 {
-    "ctrl + o: open file",
+    "ctrl + o: new tab",
     "ctrl + e: exit",
-    "F5: refresh",
+    "ctrl + w: close tab",
     "R: refresh all",
     "Left arrow: left tab",
     "Right arrow: right tab",
     "Up arrow: scroll up",
     "Down arrow: scroll down",
     "End: end of file",
-    "c: toggle color",
+    "c: toggle color in tab",
     "r: toggle auto refresh",
     "q: exit this help",
 };

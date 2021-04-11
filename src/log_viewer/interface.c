@@ -253,9 +253,10 @@ void interface_open_help(interface_t * interface)
     win_builder_data_t title_data = {
         .title = IFACE_TITLE,
         .position = CENTER,
-        .screen_cols = interface->context->screen_cols
+        .screen_cols = interface->context->screen_cols,
     };
 
+    win_builder_set_box(interface->tabs_window);
     win_builder_set_title(interface->tabs_window, &title_data);
 
     wrefresh(interface->tabs_window);
