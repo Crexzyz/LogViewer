@@ -1,7 +1,5 @@
 #include "log_viewer/interface.h"
 #include "tab_manager/tab_manager.h"
-#include "windows/window_builder.h"
-#include "context/context.h"
 #include "utils/utils.h"
 
 #include <ncurses.h>
