@@ -1,6 +1,6 @@
 #include "tab_manager/tab_manager.h"
 #include "windows/input_window.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 #include <string.h>
 

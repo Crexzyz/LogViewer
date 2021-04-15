@@ -1,6 +1,6 @@
 #include "windows/input_window.h"
 #include "windows/window_builder.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include <stdlib.h>
 #include <ctype.h>
 
