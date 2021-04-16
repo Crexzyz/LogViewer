@@ -32,6 +32,7 @@ void tab_init(tab_t * tab, char * name, char * file, char * regex,
 
     tab->cols = cols;
     tab->rows = rows;
+    tab->last_row = rows;
     tab->color = true;
 
     tab->window = newwin(rows, cols, 2, 1);
@@ -85,15 +86,15 @@ void tab_print(tab_t * tab)
     wmove(tab->window, 0, 0);
     char buffer[FILE_OPS_BUFF_SIZE];
 
-	for(size_t line = 0; line < tab->rows; ++line)
+    size_t line;
+	for(line = 0; line < tab->rows; ++line)
 	{
-        memset(buffer, 0, FILE_OPS_BUFF_SIZE);
+        bzero(buffer, FILE_OPS_BUFF_SIZE);
 	 	int status = file_ops_get_line(file, tab->regex, buffer);
 
         if(status == FILE_OPS_EOF)
         {
-            wprintw(tab->window, "%s\n", "~");
-            continue;
+            break;
         }
 
         int color_code = tab_get_line_color(tab, buffer);
@@ -103,6 +104,13 @@ void tab_print(tab_t * tab)
         wprintw(tab->window, "%s", buffer);
         wattroff(tab->window, color_code);
 	}
+
+    tab->last_row = line;
+    if(line < tab->rows)
+    {
+        for(; line < tab->rows; ++line)
+            wprintw(tab->window, "%s\n", "~");
+    }
 
     fclose(file);
 }

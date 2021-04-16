@@ -25,6 +25,7 @@ typedef struct tab
     size_t cols;
 	size_t rows;
 	size_t curr_row;
+	size_t last_row;
 	bool has_regex;
 	bool color;
 
@@ -38,9 +39,10 @@ void tab_init(tab_t * tab, char * name, char * file, char * regex,
               size_t cols, size_t rows);
 void tab_destroy(tab_t * tab);
 
-// Legacy
-void tab_add_pad(tab_t * tab, size_t cols, size_t rows);
+// Print
 void tab_print(tab_t * tab);
+
+// Color functions
 int tab_get_line_color(tab_t * tab, char * line);
 void tab_toggle_color(tab_t * tab);
 

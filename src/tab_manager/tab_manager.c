@@ -1,3 +1,4 @@
+#include "tab_manager/tab.h"
 #include "tab_manager/tab_manager.h"
 #include "windows/input_window.h"
 #include "utils/utils.h"
@@ -63,12 +64,12 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     }
     else if(input == KEY_DOWN || input == 66)
     {
-        if(curr_tab->curr_row < curr_tab->rows)
+        if(curr_tab->last_row > 1)
             curr_tab->curr_row += 1;
     }
     else if(input == 'R')
     {
-        //tab_manager_refresh_tab(tm);
+        tab_print(tab_manager_get_active_tab(tm));
     }
     else if(input == 18) // ctrl + r
     {
@@ -209,56 +210,11 @@ void tab_manager_add_tab(tab_manager_t * this, char * name, char* file_name, cha
 
 void tab_manager_refresh_all_tabs(tab_manager_t * this)
 {
-    size_t active_tab_aux = this->active_tab;
     for (size_t tab = 0; tab < this->tab_amount; ++tab)
     {
-        this->active_tab = tab;
-        //tab_manager_refresh_tab(this);
+        tab_print(this->tabs[tab]);
+        wrefresh(this->tabs[tab]->window);
     }
-
-    this->active_tab = active_tab_aux;
-    wrefresh(this->tabs[this->active_tab]->window);
-}
-
-FILE * tab_manager_open_file(tab_t * current_tab)
-{
-    FILE * file = 0;
-
-    if(current_tab->has_regex)
-    {
-        // Change this size later
-        char command[600];
-        bzero(command, 600);
-        sprintf(command, "grep \'%s\' %s > .grepresult", current_tab->regex, current_tab->file);
-        file = popen((const char *)command, "r");
-        pclose(file);
-
-        file = fopen(".grepresult", "r");
-    }
-    else
-    {
-         file = fopen(current_tab->file, "r");
-    }
-
-    if(file == NULL)
-    {
-        mvprintw(0,0, "Failed to open [%s]", current_tab->file);
-        refresh();
-    }
-    
-    return file;
-}
-
-int tab_manager_get_lines(FILE * file)
-{
-    char c = 0;
-    int count = 0;
-    for (c = fgetc(file); c != EOF; c = fgetc(file)) 
-        if (c == '\n') // Increment count if this character is newline 
-            count = count + 1; 
-
-    rewind(file);
-    return count;
 }
 
 void tab_manager_toggle_color(tab_manager_t * tm)
