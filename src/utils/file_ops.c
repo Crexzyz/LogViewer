@@ -20,14 +20,17 @@ FILE * file_ops_open_at_line(char* path, size_t line)
 
     FILE * file = file_ops_open_file(path);
 
+    if(line == 0)
+        return file;
+
     int c = 0;
-    size_t lines = 0;
+    size_t line_count = 0;
     while ((c = fgetc(file)) != EOF)
     {
         if(c == '\n')
-            ++lines;
+            ++line_count;
 
-        if(lines == line - 1)
+        if(line_count >= line)
             break;
     }
 

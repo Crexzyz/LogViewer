@@ -58,17 +58,17 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     }
     else if(input == KEY_UP || input == 65)
     {
-        if(curr_tab->last_row != 0)
-            curr_tab->last_row -= 1;
+        if(curr_tab->curr_row != 0)
+            curr_tab->curr_row -= 1;
     }
     else if(input == KEY_DOWN || input == 66)
     {
-        if(curr_tab->last_row < curr_tab->rows)
-            curr_tab->last_row += 1;
+        if(curr_tab->curr_row < curr_tab->rows)
+            curr_tab->curr_row += 1;
     }
     else if(input == 'R')
     {
-        tab_manager_refresh_tab(tm);
+        //tab_manager_refresh_tab(tm);
     }
     else if(input == 18) // ctrl + r
     {
@@ -76,7 +76,7 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input)
     }
     else if(input == 360 || input == 70) // end
     {
-        curr_tab->last_row = curr_tab->rows - tm->context->screen_rows
+        curr_tab->curr_row = curr_tab->rows - tm->context->screen_rows
                              + HELP_TAB_SIZE + 3;
     }
 }
@@ -105,15 +105,8 @@ void tab_manager_print_active(tab_manager_t * tm, WINDOW * target_window)
     if(!tab)
         return;
 
-    tab_manager_refresh_tab(tm);
-
-    prefresh(tab->window, // Window struct
-             tab->last_row, // Pad's row
-             0, // Pad's col
-             2, // Screen row
-             1, // Screen col
-             tm->context->screen_rows - 2 - HELP_TAB_SIZE, // Rows to print
-             tm->context->screen_cols - 2); // Cols to print
+    tab_print(tab);
+    wrefresh(tab->window);
 }
 
 void tab_manager_print_tabs(tab_manager_t * this, WINDOW * tabs_window)
@@ -203,55 +196,15 @@ void tab_manager_add_tab(tab_manager_t * this, char * name, char* file_name, cha
     if(file_name[0] == 0) 
         return;
 
-    name = name && name[0] == '\0' ? "<No name>" : name;
-    
-    tab_t * tab = tab_create();
-    tab_set_name(tab, name);
-    tab_set_file_name(tab, file_name);
+    tab_t * tab = tab_create(name, file_name, regex, 
+                             this->context->screen_cols - 2,
+                             this->context->screen_rows - HELP_TAB_SIZE - 3);
 
-    FILE * file = tab_manager_open_file(tab);
-    
-    if(file == NULL)
-    {
-        tab_destroy(tab);
+    if(!tab)
         return;
-    }
-
-    // Count file's lines
-    size_t lines = tab_manager_get_lines(file);
-    fclose(file);
-
-    // Smaller size than screen
-    if (lines < this->context->screen_rows - 2 - HELP_TAB_SIZE) 
-        lines = this->context->screen_rows;
-
-    tab_set_lines(tab, lines);
-
-    if (regex == NULL || regex[0] == '\0')
-        tab->has_regex = false;
-    else
-        tab_set_regex(tab, regex);
-
-    tab_add_pad(tab, this->context->screen_cols, tab->rows);
 
     this->tabs[this->tab_amount] = tab;
-    ++this->tab_amount;
-}
-
-void tab_manager_refresh_tab(tab_manager_t * this)
-{
-    tab_t * current_tab = this->tabs[this->active_tab];
-
-    if(!current_tab)
-        return;
-
-    FILE * file = tab_manager_open_file(current_tab);
-
-    if(!file)
-        return;
-
-    tab_print(current_tab, file);
-    fclose(file);
+    this->tab_amount += 1;
 }
 
 void tab_manager_refresh_all_tabs(tab_manager_t * this)
@@ -260,7 +213,7 @@ void tab_manager_refresh_all_tabs(tab_manager_t * this)
     for (size_t tab = 0; tab < this->tab_amount; ++tab)
     {
         this->active_tab = tab;
-        tab_manager_refresh_tab(this);
+        //tab_manager_refresh_tab(this);
     }
 
     this->active_tab = active_tab_aux;
