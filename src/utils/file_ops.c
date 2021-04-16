@@ -62,5 +62,7 @@ int file_ops_get_line(FILE * file, char * pattern, char * buffer)
     if(error != 0) 
         bzero(buffer, FILE_OPS_BUFF_SIZE); 
 
+    regfree(&regex);
+
     return FILE_OPS_OK;
 }

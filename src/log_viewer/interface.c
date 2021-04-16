@@ -24,6 +24,7 @@ void interface_destroy(interface_t * this)
         delwin(this->tabs_window);
         delwin(this->help_window);	
         tab_manager_destroy(this->tab_manager);
+        context_destroy(this->context);
         free(this);
     }
 }

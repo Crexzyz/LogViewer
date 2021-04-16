@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Iinclude
-CFLAGS += -Wall -Wextra
+CFLAGS += -g -Wall -Wextra
 LDFLAGS = -lncurses -lform
 
 SOURCE_DIR = src
