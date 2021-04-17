@@ -67,6 +67,19 @@ void tab_destroy_contents(tab_t * tab)
     }
 }
 
+void tab_resize(tab_t * tab, size_t rows, size_t cols)
+{
+    if(!tab)
+        return;
+
+    tab->rows = rows;
+    tab->cols = cols;
+
+    wclear(tab->window);
+    wresize(tab->window, rows, cols);
+    wrefresh(tab->window);
+}
+
 void tab_set_regex(tab_t * tab, char * regex)
 {
     if(!tab || !regex)

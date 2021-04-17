@@ -105,6 +105,8 @@ void interface_resize_windows(interface_t * this)
     mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
     interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE,
                             this->context->screen_cols, false);
+
+    tab_manager_resize(this->tab_manager);
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)

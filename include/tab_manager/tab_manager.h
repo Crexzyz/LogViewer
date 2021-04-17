@@ -8,8 +8,10 @@
 #include "context/context.h"
 #include "utils/list.h"
 
-#define TAB_MANAGER_MAX_TABS 20
 #define HELP_TAB_SIZE 1
+
+#define TM_FIX_SCR_COLS(cols) cols - 2
+#define TM_FIX_SCR_ROWS(rows) rows - HELP_TAB_SIZE - 3
 
 typedef struct tab_manager {
     context_t * context;
@@ -45,5 +47,6 @@ void tab_manager_add_tab_popup(tab_manager_t * this);
 void tab_manager_toggle_color(tab_manager_t * tm);
 bool tab_manager_get_color(tab_manager_t * tm);
 void tab_manager_close_tab(tab_manager_t * tm);
+void tab_manager_resize(tab_manager_t * tm);
 
 #endif // TAB_MANAGER_H

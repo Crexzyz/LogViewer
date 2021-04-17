@@ -199,8 +199,8 @@ void tab_manager_add_tab(tab_manager_t * this, char * name, char* file_name, cha
 
     tab_t tab;
     tab_init(&tab, name, file_name, regex,
-             this->context->screen_cols - 2,
-             this->context->screen_rows - HELP_TAB_SIZE - 3);
+             TM_FIX_SCR_COLS(this->context->screen_cols),
+             TM_FIX_SCR_ROWS(this->context->screen_rows));
 
     list_append(this->tab_list, &tab, sizeof(tab_t));
 }
@@ -260,4 +260,18 @@ size_t tab_manager_tabs_amount(tab_manager_t * tm)
         return 0;
 
     return tm->tab_list->size;
+}
+
+void tab_manager_resize(tab_manager_t * tm)
+{
+    list_node_t * tab_node = tm->tab_list->first;
+
+    while(tab_node != NULL)
+    {
+        tab_resize(tab_node->data,
+                   TM_FIX_SCR_ROWS(tm->context->screen_rows),
+                   TM_FIX_SCR_COLS(tm->context->screen_cols));
+                   
+        tab_node = tab_node->next;
+    }
 }
