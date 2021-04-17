@@ -1,7 +1,7 @@
 #include "log_viewer/interface.h"
 #include "windows/help_window.h"
 #include "windows/window_builder.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 #include <string.h>
 #include <time.h>
@@ -24,6 +24,7 @@ void interface_destroy(interface_t * this)
         delwin(this->tabs_window);
         delwin(this->help_window);	
         tab_manager_destroy(this->tab_manager);
+        context_destroy(this->context);
         free(this);
     }
 }
@@ -104,6 +105,8 @@ void interface_resize_windows(interface_t * this)
     mvwin(this->help_window, this->context->screen_rows - HELP_TAB_SIZE, 0);
     interface_resize_window(this->help_window, 0, 0, HELP_TAB_SIZE,
                             this->context->screen_cols, false);
+
+    tab_manager_resize(this->tab_manager);
 }
 
 void interface_resize_window(WINDOW * window, char * title, int position, int lines, int columns, bool draw_box)
@@ -141,8 +144,8 @@ void interface_run(interface_t * iface)
 
         size_t input = wgetch(iface->tabs_window);
         size_t opcode = interface_handle_input(iface, input);
-        mvwprintw(iface->help_window, 0, iface->context->screen_cols - 4,
-                  "%3d", input);
+        mvwprintw(iface->help_window, 0, iface->context->screen_cols - 3,
+                  "%d", input);
         wrefresh(iface->help_window);
 
         if(opcode == IFACE_EXIT)
@@ -159,13 +162,14 @@ void interface_run(interface_t * iface)
             // It is needed to refresh the file when moving between tabs
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+            continue;
         }
 
         if(opcode == IFACE_TAB_CLOSED || iface->auto_refresh)
         {
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
 
-            if(iface->tab_manager->tab_amount == 0)
+            if(iface->tab_manager->tab_list->size == 0)
                 interface_clear_content(iface);
 
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);

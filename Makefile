@@ -21,10 +21,14 @@ OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 # Generate build/ folders for each folder in src/
 OBJ_DIRS := $(patsubst $(SOURCE_DIR)/%, $(BUILD_DIR)/%, $(DIRS))
 
+
 # Link/Compile each .o and generate an executable named log_viewer
 all: $(OBJ_DIRS) $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(BUILD_DIR)/$(EXEC_FILE)
 	@echo "\e[38;5;82mLog viewer compiled.\e[m"
+
+debug: CFLAGS += -DDEBUG -g
+debug: all
 
 # Compile each .c file in source folder
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
