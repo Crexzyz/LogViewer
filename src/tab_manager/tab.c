@@ -43,24 +43,40 @@ void tab_destroy(tab_t * tab)
 {
     if(tab)
     {
+        if(tab->has_regex)
+        {
+            regfree(tab->regex);
+            free(tab->regex);
+            tab->regex = 0;
+        }
+
         if(tab->window)
+        {
             delwin(tab->window);
+            tab->window = 0;            
+        }
 
         free(tab);
     }
 }
 
-void tab_add_pad(tab_t * tab, size_t cols, size_t rows)
+void tab_set_regex(tab_t * tab, char * regex)
 {
-    if(tab)
-    {
-        tab->cols = cols;
-        tab->rows = rows;
+    if(!tab || !regex)
+        return;
 
-        tab->window = newpad(rows, cols);
-        keypad(tab->window, TRUE);
-        scrollok(tab->window, TRUE);
+    tab->regex = malloc(sizeof(regex_t));
+
+    int error = regcomp(tab->regex, regex, 0);
+
+    if(error != 0)
+    {
+        regfree(tab->regex);
+        free(tab->regex);
+        return;
     }
+
+    tab->has_regex = true;
 }
 
 int tab_get_line_color(tab_t * tab, char * line)

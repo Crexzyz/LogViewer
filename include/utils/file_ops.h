@@ -9,9 +9,10 @@
 #define FILE_OPS_REGEX_ERR 2
 
 #include <stdio.h>
+#include <regex.h>
 
 FILE * file_ops_open_file(char* path);
 FILE * file_ops_open_at_line(char* path, size_t line);
-int file_ops_get_line(FILE * file, char * regex, char * buffer);
+int file_ops_get_line(FILE * file, regex_t * regex, char * buffer);
 
 #endif

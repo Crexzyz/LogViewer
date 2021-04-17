@@ -38,7 +38,7 @@ FILE * file_ops_open_at_line(char* path, size_t line)
 }
 
 
-int file_ops_get_line(FILE * file, char * pattern, char * buffer)
+int file_ops_get_line(FILE * file, regex_t * regex, char * buffer)
 {
     if(!file)
         return FILE_OPS_FILE_ERROR;
@@ -48,21 +48,14 @@ int file_ops_get_line(FILE * file, char * pattern, char * buffer)
     if(res == NULL) // EOF
         return FILE_OPS_EOF;
 
-    if(!pattern)
+    if(!regex)
         return FILE_OPS_OK;
 
-    regex_t regex;
-    int error = regcomp(&regex, pattern, 0);
-    if(error != 0)
-        return FILE_OPS_REGEX_ERR;
-
-    error = regexec(&regex, buffer, 0, NULL, 0);
+    int error = regexec(regex, buffer, 0, NULL, 0);
 
     // No match, clean buffer
     if(error != 0) 
         bzero(buffer, FILE_OPS_BUFF_SIZE); 
-
-    regfree(&regex);
 
     return FILE_OPS_OK;
 }
