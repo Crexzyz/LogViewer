@@ -6,14 +6,14 @@
 
 #include "tab.h"
 #include "context/context.h"
+#include "utils/list.h"
 
 #define TAB_MANAGER_MAX_TABS 20
 #define HELP_TAB_SIZE 1
 
 typedef struct tab_manager {
-    tab_t * tabs[TAB_MANAGER_MAX_TABS];
     context_t * context;
-    size_t tab_amount;
+    list_t * tab_list;
 	size_t active_tab;
     size_t tab_display_start;
 	size_t tab_display_end;
@@ -29,6 +29,7 @@ void tab_manager_handle_input(tab_manager_t * tm, size_t input);
 
 // Utility functions
 tab_t * tab_manager_get_active_tab(tab_manager_t * tm);
+size_t tab_manager_tabs_amount(tab_manager_t * tm);
 
 // Print functions
 void tab_manager_print_tabs(tab_manager_t * tm, WINDOW * target_window);

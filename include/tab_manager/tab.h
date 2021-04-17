@@ -40,10 +40,14 @@ void tab_init(tab_t * tab, char * name, char * file, char * regex,
               size_t cols, size_t rows);
 void tab_destroy(tab_t * tab);
 
+void tab_destroy_contents(tab_t * tab);
+static inline void tab_destroy_contents_cast(void * tab) { tab_destroy_contents((tab_t *)tab); };
+
 void tab_set_regex(tab_t * tab, char * regex);
 
 // Print
 void tab_print(tab_t * tab);
+void tab_print_cast(void * tab);
 
 // Color functions
 int tab_get_line_color(tab_t * tab, char * line);

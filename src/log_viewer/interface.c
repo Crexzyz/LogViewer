@@ -142,8 +142,8 @@ void interface_run(interface_t * iface)
 
         size_t input = wgetch(iface->tabs_window);
         size_t opcode = interface_handle_input(iface, input);
-        mvwprintw(iface->help_window, 0, iface->context->screen_cols - 4,
-                  "%3d", input);
+        mvwprintw(iface->help_window, 0, iface->context->screen_cols - 3,
+                  "%d", input);
         wrefresh(iface->help_window);
 
         if(opcode == IFACE_EXIT)
@@ -160,13 +160,14 @@ void interface_run(interface_t * iface)
             // It is needed to refresh the file when moving between tabs
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);
+            continue;
         }
 
         if(opcode == IFACE_TAB_CLOSED || iface->auto_refresh)
         {
             tab_manager_print_tabs(iface->tab_manager, iface->tabs_window);
 
-            if(iface->tab_manager->tab_amount == 0)
+            if(iface->tab_manager->tab_list->size == 0)
                 interface_clear_content(iface);
 
             tab_manager_print_active(iface->tab_manager, iface->tabs_window);

@@ -43,20 +43,27 @@ void tab_destroy(tab_t * tab)
 {
     if(tab)
     {
-        if(tab->has_regex)
-        {
-            regfree(tab->regex);
-            free(tab->regex);
-            tab->regex = 0;
-        }
-
-        if(tab->window)
-        {
-            delwin(tab->window);
-            tab->window = 0;            
-        }
-
+        tab_destroy_contents(tab);
         free(tab);
+    }
+}
+
+void tab_destroy_contents(tab_t * tab)
+{
+    if(!tab)
+        return;
+
+    if(tab->has_regex)
+    {
+        regfree(tab->regex);
+        free(tab->regex);
+        tab->regex = 0;
+    }
+
+    if(tab->window)
+    {
+        delwin(tab->window);
+        tab->window = 0;            
     }
 }
 
@@ -90,6 +97,11 @@ int tab_get_line_color(tab_t * tab, char * line)
         return COLOR_PAIR(HIGHLIGHT_ERROR);
 
     return HIGHLIGHT_NONE;
+}
+
+void tab_print_cast(void * tab)
+{
+    tab_print((tab_t *)tab);
 }
 
 void tab_print(tab_t * tab)
